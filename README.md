@@ -43,8 +43,8 @@ All of the heavy folders are git-ignored.
 
 ## Docs
 
-- `CONTEXT.md` project context, stack, requirements, design references, constraints
-- `PRD.md` scoped spec for Claude Code (stories + acceptance criteria)
+- `docs/CONTEXT.md` project context, stack, requirements, design references, constraints
+- `docs/PRD.md` scoped spec for Claude Code (stories + acceptance criteria)
 - `CLAUDE.md` rules Claude Code follows in this repo
 - `docs/ARCHITECTURE.md`, `docs/UI.md`, `docs/DESIGN.md`, `docs/MODELS.md`, `docs/PLAN.md`
 - `tracker/jarvis-sprint.html` daily log (open in a browser)

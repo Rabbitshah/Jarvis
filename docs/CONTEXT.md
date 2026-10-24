@@ -3,7 +3,7 @@
 ## 1. Project context
 - **What:** a personal assistant that runs fully on the owner's Mac. It chats, calls tools, searches the owner's own notes, and later speaks.
 - **For whom:** one user (Maanav). Also a public portfolio piece for SDE-1 / full-stack / AI-ML roles at Indian startups, so the repo must be clean and runnable by a stranger.
-- **Goal / finish line:** by **Fri Dec 4, 2026**, on the Mac, Jarvis answers by text or voice with a local model, searches the user's notes and names the source file, Claude Desktop can call its tools over MCP, and a stranger can run it from the README.
+- **Goal / finish line:** by **Fri Dec 4, 2026**, on the Mac, Jarvis answers by text or voice with a local model, searches the user's notes and names the source file, its tools are available through a local MCP server (no cloud apps), and a stranger can run it from the README.
 - **Time budget:** 1 hour per day, 6 days a week, 1 catch-up day (see `docs/PLAN.md`).
 
 ## 2. Tech stack (do not add to it without asking)
@@ -23,7 +23,7 @@
 | Packaging | uv + pyproject.toml, `uv.lock` committed |
 
 ## 3. Requirements
-See `PRD.md` for stories and acceptance criteria. In short:
+See `docs/PRD.md` for stories and acceptance criteria. In short:
 1. Chat in terminal and over HTTP with streaming and per-session history.
 2. Tools: `get_time`, `list_notes`, `read_note`, later `search_notes`, `remember`.
 3. The same tool functions serve the agent and the MCP server.

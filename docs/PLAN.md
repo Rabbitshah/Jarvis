@@ -14,10 +14,10 @@ End each day with `Next session: ___` and a `git push`.
 | --- | --- | --- | --- |
 | 2 | Sun Oct 25 | Read current MCP docs; hello server with 1 tool | DONE early (Oct 24): Inspector on the Mac lists and runs hello; SDK client test passes |
 | 3 | Mon Oct 26 | Share tool functions between agent and MCP | DONE early (Oct 24): MCP registers the agent's own functions; a test fails if schemas drift |
-| 4 | Tue Oct 27 | Expose list_notes and read_note | Inspector reads a note |
-| 5 | Wed Oct 28 | Connect Claude Desktop | Claude Desktop lists your notes |
-| 6 | Thu Oct 29 | Input checks, errors, timeouts | Bad input gives a clear error |
-| 7 | Fri Oct 30 | MCP smoke test and pytest | scripts/test.sh passes |
+| 4 | Tue Oct 27 | Expose list_notes and read_note | DONE early (Oct 24): Inspector on the Mac lists tools, reads a note, blocks ../ |
+| 5 | Wed Oct 28 | Input checks, errors, timeouts | Bad input gives a clear error |
+| 6 | Thu Oct 29 | MCP smoke test, pytest, short "run MCP locally" section in the README | scripts/test.sh passes; README explains the Inspector |
+| 7 | Fri Oct 30 | Spare (Claude Desktop step dropped: Jarvis stays fully local) | n/a |
 | 8 | Sat Oct 31 | Catch-up | n/a |
 
 ## Week 3 (Nov 1-7): Note memory
@@ -30,7 +30,7 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 11 | Tue Nov 3 | Chunk and ingest 20 real notes | Count matches |
 | 12 | Wed Nov 4 | search_notes(query, k) | 5 test queries hit the right note |
 | 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Answers from an old note and names it |
-| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Claude Desktop searches notes |
+| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Inspector finds notes by meaning |
 | 15 | Sat Nov 7 | Catch-up | n/a |
 
 ## Week 4 (Nov 8-14): Measure and harden

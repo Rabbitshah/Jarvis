@@ -1,13 +1,13 @@
 # PRD / System Specification: Jarvis
 
 ## 1. Outcome & Users
-- **Target Outcome:** the owner can ask a local assistant questions by text or voice and get answers grounded in their own notes, and can reach the same tools from Claude Desktop, with nothing leaving the machine.
+- **Target Outcome:** the owner can ask a local assistant questions by text or voice and get answers grounded in their own notes, and the same tools are available through a local MCP server, with nothing leaving the machine.
 - **Target Users:** the owner (CS student, comfortable with full-stack web, beginner in ML). Secondary: a recruiter or engineer who clones the repo and runs it from the README.
 
 ## 2. Technical Constraints & Conventions
 - **Stack:** Python 3.12, Ollama, FastAPI, httpx, pytest, uv. Later: Qdrant (embedded), MCP SDK, Whisper, Piper, React + Vite + Tailwind.
 - **Code Conventions:** type hints everywhere; one module per concern; tools are plain functions registered in `tools/builtin.py`; no global state outside `create_app`; tests use `FakeLLM`, never a real model; config only via `config/jarvis.toml`.
-- **Libraries allowed:** those listed in `CONTEXT.md` section 2 only. Adding any other library needs the owner's approval. Never invent a package or version.
+- **Libraries allowed:** those listed in `docs/CONTEXT.md` section 2 only. Adding any other library needs the owner's approval. Never invent a package or version.
 - **Install location:** inside the repo root only (see `scripts/env.sh`).
 
 ## 3. Data Model & Architecture
@@ -48,12 +48,12 @@
   - WHEN the message is empty or over 4000 characters THE SYSTEM SHALL return 422.
   - THE SYSTEM SHALL bind to `127.0.0.1` only.
 
-### Story 5: MCP server
-- **User Intent:** As the owner, I want Claude Desktop to use my tools, so that my notes are reachable from it.
+### Story 5: MCP server (local only)
+- **User Intent:** As the owner, I want my tools behind a standard local interface (MCP), so that any local MCP client can use them.
 - **Acceptance Criteria:**
-  - WHEN the MCP inspector connects THE SYSTEM SHALL list `list_notes` and `read_note` using the same functions as the agent.
-  - WHEN Claude Desktop is configured THE SYSTEM SHALL answer a tool call end to end.
-  - WHEN input is invalid THE SYSTEM SHALL return a clear error without crashing.
+  - WHEN the MCP Inspector connects THE SYSTEM SHALL list `get_time`, `list_notes` and `read_note` using the same functions as the agent.
+  - WHEN input is invalid or a path escapes `notes/` THE SYSTEM SHALL return a clear error without crashing.
+  - THE SYSTEM SHALL NOT be connected to any cloud app (no Claude Desktop). Notes never leave the machine.
 - **Note:** read the current official MCP docs first. Do not rely on memory for SDK or config syntax.
 
 ### Story 6: Note memory (Qdrant)
@@ -96,7 +96,7 @@
 - Wake word, user accounts / auth, mobile app, Docker packaging of the app
 - Running on the Windows laptop
 - Summary mode (add only if everything else is done early)
-- Any library or tool not listed in `CONTEXT.md`
+- Any library or tool not listed in `docs/CONTEXT.md`
 
 ## 6. Open Questions [NEEDS CLARIFICATION]
 - Does `llama3.1:8b` call tools reliably on this Mac? Decide after the first real run (see `docs/MODELS.md`).

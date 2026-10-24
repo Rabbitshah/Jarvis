@@ -4,8 +4,8 @@
 ```
  Terminal (cli.py) ──┐
  Web UI (week 6) ────┼──► API (api.py, FastAPI, SSE) ──► Agent (agent.py)
- Claude Desktop ─────┘          │                           │
-   (via MCP, week 2)            │                           ├──► OllamaClient (llm.py) ──► Ollama :11500
+ MCP client/Inspector ┘         │                           │
+   (local MCP, stdio)           │                           ├──► OllamaClient (llm.py) ──► Ollama :11500
                                 │                           │         └─ weights in models/ollama
                                 │                           └──► Tool Registry (tools/registry.py)
                                 │                                   ├─ get_time

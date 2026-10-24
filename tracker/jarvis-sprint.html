@@ -92,7 +92,7 @@ const PLAN = [
     "w": 2,
     "from": "2026-10-25",
     "to": "2026-10-31",
-    "focus": "MCP: Read current MCP docs; hello server with 1 tool; Share tool functions between agent and MCP; Expose list_notes and read_note; Connect Claude",
+    "focus": "MCP: Read current MCP docs; hello server with 1 tool; Share tool functions between agent and MCP; Expose list_notes and read_note; Input checks, ",
     "done": "DONE early (Oct 24): Inspector on the Mac lists and runs hello; SDK client test passes"
   },
   {
@@ -150,28 +150,28 @@ const DAYS = [
     "n": 4,
     "date": "2026-10-27",
     "task": "Expose list_notes and read_note",
-    "done": "Inspector reads a note",
+    "done": "DONE early (Oct 24): Inspector on the Mac lists tools, reads a note, blocks ../",
     "w": 2
   },
   {
     "n": 5,
     "date": "2026-10-28",
-    "task": "Connect Claude Desktop",
-    "done": "Claude Desktop lists your notes",
-    "w": 2
-  },
-  {
-    "n": 6,
-    "date": "2026-10-29",
     "task": "Input checks, errors, timeouts",
     "done": "Bad input gives a clear error",
     "w": 2
   },
   {
+    "n": 6,
+    "date": "2026-10-29",
+    "task": "MCP smoke test, pytest, short \"run MCP locally\" section in the README",
+    "done": "scripts/test.sh passes; README explains the Inspector",
+    "w": 2
+  },
+  {
     "n": 7,
     "date": "2026-10-30",
-    "task": "MCP smoke test and pytest",
-    "done": "scripts/test.sh passes",
+    "task": "Spare (Claude Desktop step dropped: Jarvis stays fully local)",
+    "done": "n/a",
     "w": 2
   },
   {
@@ -220,7 +220,7 @@ const DAYS = [
     "n": 14,
     "date": "2026-11-06",
     "task": "search_notes as agent and MCP tool",
-    "done": "Claude Desktop searches notes",
+    "done": "Inspector finds notes by meaning",
     "w": 3
   },
   {
@@ -399,6 +399,20 @@ const LOG = [
     "did": "Day 3 done early: MCP server now exposes the agent's real tools (get_time, list_notes, read_note) from one shared place. Drift test added. 36 tests pass",
     "broke": "The SDK hides non-MCP error text, so sandbox errors came back blank. Fixed with a small wrapper",
     "next": "Day 4: expose notes tools and check them in the Inspector"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 4 done early: Inspector on the Mac runs get_time, list_notes, read_note and blocks ../ . 37 tests pass",
+    "broke": "Nothing new",
+    "next": "Day 5: input checks, errors, timeouts"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Dropped the Claude Desktop step (Jarvis stays fully local) and removed its files. Moved CONTEXT.md and PRD.md into docs/. Kept caches out of the repo root",
+    "broke": "Nothing",
+    "next": "Day 5: input checks, errors, timeouts"
   }
 ];
 // ---- END DATA ----

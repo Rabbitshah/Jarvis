@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Read `CONTEXT.md` and `PRD.md` first. Build only what the current story asks.
+Read `docs/CONTEXT.md` and `docs/PRD.md` first. Build only what the current story asks.
 
 ## Working rules
 - One story per session. Say your plan in 3 lines before coding.
