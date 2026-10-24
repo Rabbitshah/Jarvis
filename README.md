@@ -2,7 +2,7 @@
 
 A personal AI assistant that runs **fully on your own machine**: local LLM through Ollama, tools it can call, and (in later weeks) an MCP server, Qdrant note memory and voice.
 
-> Status: **v0.1 scaffold** (plan days 1-6). Terminal chat, tool calling, sandboxed notes tools and a streaming API are written and unit-tested. Not yet verified end-to-end with a real model on the Mac: run `scripts/doctor.sh` after setup.
+> Status: **v0.1** (plan days 1-6). Terminal chat, tool calling, sandboxed notes tools, a streaming API and a local MCP server are written and unit-tested. Not yet verified end-to-end with a real model on the Mac: run `scripts/doctor.sh` after setup.
 
 ## Quick start (macOS, Apple Silicon)
 
@@ -13,6 +13,7 @@ scripts/run.sh          # terminal chat
 scripts/run.sh --api    # HTTP API on 127.0.0.1:8000
 scripts/test.sh         # unit tests (no model needed)
 scripts/doctor.sh       # checks Ollama, model and notes folder
+scripts/mcp-smoke.sh    # starts the MCP server and calls each tool once
 ```
 
 Nothing is installed outside this folder (see "Where things live"). Deleting the folder removes everything.
@@ -25,7 +26,23 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | Tool calling loop (`get_time`, `list_notes`, `read_note`) | built, unit-tested |
 | Notes sandbox (blocks `../`, absolute paths, symlink escape) | built, unit-tested |
 | Streaming API (`POST /chat`, `GET /health`) | built, unit-tested |
-| MCP server, Qdrant memory, voice, web UI | planned, see `docs/PLAN.md` |
+| MCP server (same tools as the agent, over stdio) | built, unit-tested, smoke script |
+| Input checks + 10 s tool timeout | built, unit-tested |
+| Qdrant memory, voice, web UI | planned, see `docs/PLAN.md` |
+
+## Run the MCP server locally
+
+The MCP server gives any MCP client the same three tools the chat agent uses (`get_time`, `list_notes`, `read_note`). It needs no model and no internet.
+
+```bash
+scripts/mcp-smoke.sh   # quickest check: starts the server, calls every tool, prints PASS/FAIL
+scripts/mcp-dev.sh     # opens the MCP Inspector in your browser (installs Node into .tools/ if missing)
+uv run jarvis-mcp      # runs the server over stdio, for a client that launches it itself
+```
+
+- In the Inspector: pick **Tools**, run `list_notes`, then `read_note` with a name from the list. Try `../README.md`: it must fail with "path escapes the notes folder".
+- Bad input (missing or wrong-type argument) returns an error instead of crashing. A tool that runs longer than `tool_timeout_seconds` (default 10, in `config/jarvis.toml`) returns a timeout error.
+- Tools only read `.md` / `.txt` files inside `notes/`, same as the chat agent.
 
 ## Where things live
 

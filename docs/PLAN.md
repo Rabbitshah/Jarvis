@@ -16,7 +16,7 @@ End each day with `Next session: ___` and a `git push`.
 | 3 | Mon Oct 26 | Share tool functions between agent and MCP | DONE early (Oct 24): MCP registers the agent's own functions; a test fails if schemas drift |
 | 4 | Tue Oct 27 | Expose list_notes and read_note | DONE early (Oct 24): Inspector on the Mac lists tools, reads a note, blocks ../ |
 | 5 | Wed Oct 28 | Input checks, errors, timeouts | DONE early (Oct 24): wrong or missing arguments give a clear error; slow tools time out at 10 s; 50 tests pass |
-| 6 | Thu Oct 29 | MCP smoke test, pytest, short "run MCP locally" section in the README | scripts/test.sh passes; README explains the Inspector |
+| 6 | Thu Oct 29 | MCP smoke test, pytest, short "run MCP locally" section in the README | DONE early (Oct 24): scripts/mcp-smoke.sh passes (6 checks); 52 tests pass; README section added |
 | 7 | Fri Oct 30 | Spare (Claude Desktop step dropped: Jarvis stays fully local) | n/a |
 | 8 | Sat Oct 31 | Catch-up | n/a |
 

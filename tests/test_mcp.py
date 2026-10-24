@@ -69,3 +69,36 @@ def test_works_through_mcp_run_like_the_inspector(cfg):
             return sorted(t.name for t in (await client.list_tools()).tools)
 
     assert run(go()) == ["get_time", "list_notes", "read_note"]
+
+
+def test_stdio_bad_input_is_flagged(cfg):
+    async def go():
+        async with Client(stdio_params(cfg)) as client:
+            return [await client.call_tool("read_note", {}), await client.call_tool("read_note", {"path": 5})]
+
+    for result in run(go()):
+        assert result.is_error
+
+
+def test_slow_tool_times_out_over_mcp(cfg):
+    import dataclasses
+    import time
+
+    from jarvis.tools.registry import Tool
+
+    slow = Tool("slow", "sleeps", {"type": "object", "properties": {}}, lambda: time.sleep(2) or "late")
+    cfg2 = dataclasses.replace(cfg, tool_timeout_seconds=0.2)
+
+    from jarvis import mcp_server
+    from mcp.server import MCPServer
+
+    server = MCPServer("t")
+    server.add_tool(mcp_server._expose(slow.fn, cfg2.tool_timeout_seconds), name="slow", description="x")
+
+    async def go():
+        async with Client(server) as client:
+            return await client.call_tool("slow", {})
+
+    result = run(go())
+    assert result.is_error
+    assert "timed out" in result.content[0].text

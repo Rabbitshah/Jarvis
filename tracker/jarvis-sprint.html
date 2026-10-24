@@ -164,7 +164,7 @@ const DAYS = [
     "n": 6,
     "date": "2026-10-29",
     "task": "MCP smoke test, pytest, short \"run MCP locally\" section in the README",
-    "done": "scripts/test.sh passes; README explains the Inspector",
+    "done": "DONE early (Oct 24): scripts/mcp-smoke.sh passes (6 checks); 52 tests pass; README section added",
     "w": 2
   },
   {
@@ -420,6 +420,13 @@ const LOG = [
     "did": "Day 5 done early: tools check missing, extra and wrong-type arguments. Slow tools time out after 10 s (agent and MCP share the same limit, set in config). read_note reads at most 20,000 characters from disk. Bad session_id is rejected. 50 tests pass",
     "broke": "An old test expected the old error text; updated",
     "next": "Day 6: MCP smoke test, README \"run MCP locally\" section"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 6 done early: scripts/mcp-smoke.sh starts the MCP server and calls every tool (6 checks, all pass). Added MCP tests for bad input and timeout. README has a \"Run the MCP server locally\" section. 52 tests pass",
+    "broke": "The SDK shows its own validation text for wrong arguments (long but still an error); left as is",
+    "next": "Day 7 is spare. Suggest: pick the week 3 memory approach, or add more real notes (need about 20 by Nov 3)"
   }
 ];
 // ---- END DATA ----
