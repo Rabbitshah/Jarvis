@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from .agent import Agent, ChatClient
 from .config import Config, load_config
 from .llm import OllamaClient
+from .memory.context import make_context_fn
 from .tools.builtin import build_registry
 
 MAX_SESSIONS = 20
@@ -25,7 +26,8 @@ class ChatRequest(BaseModel):
 
 def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> FastAPI:
     cfg = cfg or load_config()
-    client = llm or OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds)
+    client = llm or OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
+    context_fn = make_context_fn(cfg, client.embed) if hasattr(client, "embed") else None
     registry = build_registry(cfg)
     sessions: "OrderedDict[str, Agent]" = OrderedDict()
     app = FastAPI(title="Jarvis", version="0.1.0")
@@ -35,7 +37,7 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
             sessions.move_to_end(session_id)
         else:
             sessions[session_id] = Agent(client, registry, cfg.system_prompt,
-                                         cfg.max_tool_rounds, cfg.max_history)
+                                         cfg.max_tool_rounds, cfg.max_history, context_fn)
             while len(sessions) > MAX_SESSIONS:
                 sessions.popitem(last=False)
         return sessions[session_id]

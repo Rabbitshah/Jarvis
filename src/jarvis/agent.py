@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Iterator, Protocol
+from typing import Any, Callable, Iterator, Protocol
 
 from .llm import LLMError
 from .tools.registry import Registry
@@ -14,12 +14,14 @@ class ChatClient(Protocol):
 
 class Agent:
     def __init__(self, llm: ChatClient, registry: Registry, system_prompt: str,
-                 max_rounds: int = 4, max_history: int = 40) -> None:
+                 max_rounds: int = 4, max_history: int = 40,
+                 context_fn: Callable[[str], Any] | None = None) -> None:
         self.llm = llm
         self.registry = registry
         self.system_prompt = system_prompt
         self.max_rounds = max_rounds
         self.max_history = max_history
+        self.context_fn = context_fn
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
 
     def reset(self) -> None:
@@ -46,10 +48,17 @@ class Agent:
     def chat(self, user_text: str) -> Iterator[dict]:
         self.messages.append({"role": "user", "content": user_text})
         self._trim()
+        turn = len(self.messages) - 1  # index of this turn's user message
+        ctx = self.context_fn(user_text) if self.context_fn else None
+        if ctx:
+            yield {"type": "sources", "files": ctx.files}
         try:
             for _ in range(self.max_rounds):
                 content, calls, held = "", [], False
-                for chunk in self.llm.chat_stream(self.messages, self.registry.schemas()):
+                view = list(self.messages)
+                if ctx:  # excerpts go to the model for THIS turn only; history keeps the plain question
+                    view[turn] = {"role": "user", "content": f"{ctx.text}\n\nQuestion: {user_text}"}
+                for chunk in self.llm.chat_stream(view, self.registry.schemas()):
                     msg = chunk.get("message") or {}
                     text = msg.get("content")
                     if text:

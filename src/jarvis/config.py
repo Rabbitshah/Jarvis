@@ -23,6 +23,9 @@ class Config:
     notes_dir: Path
     index_dir: Path
     ingest_exclude: tuple[str, ...]
+    memory_enabled: bool
+    memory_k: int
+    memory_min_score: float
     api_host: str
     api_port: int
 
@@ -31,6 +34,7 @@ def load_config(path: str | Path | None = None) -> Config:
     cfg_path = Path(path or os.environ.get("JARVIS_CONFIG") or DEFAULT_CONFIG)
     data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
     llm, agent, paths, api = data["llm"], data["agent"], data["paths"], data["api"]
+    memory = data.get("memory", {})
 
     notes = Path(os.environ.get("JARVIS_NOTES_DIR") or paths["notes_dir"])
     if not notes.is_absolute():
@@ -52,6 +56,9 @@ def load_config(path: str | Path | None = None) -> Config:
         notes_dir=notes,
         index_dir=index,
         ingest_exclude=tuple(paths.get("ingest_exclude", [])),
+        memory_enabled=bool(memory.get("enabled", True)),
+        memory_k=int(memory.get("k", 3)),
+        memory_min_score=float(memory.get("min_score", 0.5)),
         api_host=api["host"],
         api_port=int(api["port"]),
     )

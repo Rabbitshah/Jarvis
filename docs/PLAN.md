@@ -28,8 +28,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 9 | Sun Nov 1 | Embedded Qdrant, create collection | DONE early (Oct 24): checked the docs and probed the API; VectorStore tests put a vector in and get it back, and survive a reopen |
 | 10 | Mon Nov 2 | Embeddings through Ollama | DONE early (Oct 24): doctor on the Mac prints vector size 768 (constant) |
 | 11 | Tue Nov 3 | Chunk and ingest 20 real notes | DONE early (Oct 24): scripts/ingest.sh on the Mac: 20 notes, 38 chunks in the index, MATCH |
-| 12 | Wed Nov 4 | search_notes(query, k) | Code done early (Oct 24), 76 tests pass. NOT yet run on real data: bash scripts/search-eval.sh (5 cases in notes/eval-cases.toml); pass = right note in the top 3 |
-| 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Answers from an old note and names it |
+| 12 | Wed Nov 4 | search_notes(query, k) | DONE early (Oct 24): search-eval on the Mac: top-3 5/5, top-1 4/5 (the miss ranked 2nd) |
+| 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Code done early (Oct 24), 81 tests pass. NOT yet checked with the real model: ask a notes question in scripts/run.sh; the answer must come from the note and name the file |
 | 14 | Fri Nov 6 | search_notes as agent and MCP tool | Inspector finds notes by meaning |
 | 15 | Sat Nov 7 | Catch-up | n/a |
 

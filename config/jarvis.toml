@@ -22,6 +22,11 @@ notes_dir = "notes"   # relative to the repo root
 ingest_exclude = ["README.md", "sample-*"]   # files that are not real notes
 index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to delete
 
+[memory]
+enabled = true        # put matching note excerpts into each question
+k = 3                 # how many excerpts at most
+min_score = 0.5       # ignore weaker matches (calibrate with scripts/search-eval.sh)
+
 [api]
 host = "127.0.0.1"    # local only. Do not change without adding auth.
 port = 8000
