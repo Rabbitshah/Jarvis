@@ -1,0 +1,24 @@
+# All runtime settings live here. Env overrides: JARVIS_MODEL, JARVIS_OLLAMA_URL, JARVIS_NOTES_DIR.
+
+[llm]
+# Private Ollama server started from this repo (port differs from the default 11434
+# so it never clashes with a system-wide Ollama).
+ollama_url = "http://127.0.0.1:11500"
+model = "llama3.1:8b"            # chat model. Verify with: scripts/doctor.sh
+embed_model = "nomic-embed-text" # used from week 3 (Qdrant memory)
+timeout_seconds = 120
+
+[agent]
+max_tool_rounds = 4
+max_history = 40
+system_prompt = """You are Jarvis, a concise personal assistant running fully on the user's own machine.
+Use tools when they help. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
+Trust tool results and answer directly from them; do not ask the user for information a tool already gave.
+If a tool returns an error, tell the user plainly. Keep answers short."""
+
+[paths]
+notes_dir = "notes"   # relative to the repo root
+
+[api]
+host = "127.0.0.1"    # local only. Do not change without adding auth.
+port = 8000

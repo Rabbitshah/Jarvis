@@ -1,0 +1,15 @@
+# everything heavy stays inside the repo root but out of git
+.venv/
+.tools/
+models/ollama/
+models/hf/
+models/*.log
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+# your real notes are private; keep only the folder
+notes/*
+!notes/.gitkeep
+!notes/README.md

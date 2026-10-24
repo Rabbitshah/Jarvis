@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis Sprint</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--mut:#666;--line:#ddd;--card:#f6f6f4;--acc:#2a5bd7;--ok:#1e7a46}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#999;--line:#333;--card:#202020;--acc:#7aa2ff;--ok:#5fcf8e}}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:900px;padding:24px 16px;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,sans-serif}
+h1{margin:0 0 4px}h2{margin:28px 0 8px;font-size:18px}
+.mut{color:var(--mut)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.wrap{overflow-x:auto}
+tr.now{background:var(--card);outline:2px solid var(--acc)}
+ul{padding-left:20px}
+form{display:grid;gap:8px;background:var(--card);padding:12px;border-radius:8px}
+label{font-size:13px;color:var(--mut)}
+input,textarea,select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+button{padding:8px 14px;border:0;border-radius:6px;background:var(--acc);color:var(--bg);font:inherit;cursor:pointer}
+button.alt{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.entry{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+.entry b{color:var(--acc)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.stat{background:var(--card);padding:8px 12px;border-radius:8px}
+pre{white-space:pre-wrap;background:var(--card);padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>Jarvis Sprint</h1>
+<div class="mut">1 hr/day, 6 days a week, 1 catch-up day. Starts Fri Oct 2, 2026.</div>
+
+<h2>Goal</h2>
+<p id="goal"></p>
+
+<h2>Rules</h2>
+<ul id="rules"></ul>
+
+<h2>Plan</h2>
+<div class="wrap"><table id="plan"></table></div>
+
+<h2>Today</h2>
+<div id="today" class="entry"></div>
+
+<h2>Progress</h2>
+<div class="bar" id="stats"></div>
+
+<h2>Add daily log</h2>
+<form id="f">
+  <div class="row">
+    <div><label>Date</label><input type="date" name="date" required></div>
+    <div><label>Hours</label><input type="number" name="hours" step="0.25" min="0" value="1"></div>
+  </div>
+  <div><label>Week</label><select name="week"></select></div>
+  <div><label>What I did</label><textarea name="did" rows="2" required></textarea></div>
+  <div><label>Done when (the check that passed or failed)</label><input name="check"></div>
+  <div><label>What broke</label><input name="broke"></div>
+  <div><label>Next session: ___</label><input name="next" required></div>
+  <button>Save entry</button>
+</form>
+
+<h2>Daily log</h2>
+<div class="bar">
+  <button class="alt" id="sum">Week summary</button>
+  <button class="alt" id="exp">Export JSON</button>
+  <button class="alt" id="imp">Import JSON</button>
+</div>
+<pre id="out" hidden></pre>
+<div id="log"></div>
+
+<script>
+// ---- EDIT THIS DATA IN CODE ----
+const GOAL = "Rebuild Jarvis from scratch: local Ollama assistant with tools, MCP server, Qdrant note memory, voice, README and demo. Deadline Fri Dec 4, 2026. Free and local only.";
+const RULES = [
+  "1 hour per day, 6 task days a week, 1 catch-up day",
+  "Tracking restarts Sat Oct 24, 2026 (the old build is lost; old log does not count)",
+  "End every session with one line: Next session: ___ and git push",
+  "Skipped 2 days in a row: drop the lowest-value task of that week, do not stack a backlog"
+];
+const PLAN = [
+  {
+    "w": 1,
+    "from": "2026-10-24",
+    "to": "2026-10-30",
+    "focus": "Core agent: Setup: run `scripts/setup.sh`, confirm repo pushes to GitHub; Real-model chat check (history, `/reset`); Config + logging + more tests; Tool",
+    "done": "Model answers in terminal; `scripts/test.sh` passes"
+  },
+  {
+    "w": 2,
+    "from": "2026-10-31",
+    "to": "2026-11-06",
+    "focus": "MCP: Read current MCP docs; hello server, 1 tool; Share tool functions between agent and MCP; Expose `list_notes`, `read_note`; Connect Claude De",
+    "done": "Inspector lists and calls it"
+  },
+  {
+    "w": 3,
+    "from": "2026-11-07",
+    "to": "2026-11-13",
+    "focus": "Note memory: Embedded Qdrant, create collection; Embeddings via Ollama; Chunk + ingest 20 real notes; `search_notes(query, k)`; Feed chunks into answers,",
+    "done": "Insert one vector and read it back"
+  },
+  {
+    "w": 4,
+    "from": "2026-11-14",
+    "to": "2026-11-20",
+    "focus": "Measure and harden: 20-question eval set + script; Tune chunk size and k; `remember` with y/n confirm; Incremental ingest (hash files); Prompt-injection test; M",
+    "done": "Prints hit@3"
+  },
+  {
+    "w": 5,
+    "from": "2026-11-21",
+    "to": "2026-11-27",
+    "focus": "Voice: Push-to-talk recording to WAV; Whisper transcription; choose faster-whisper vs mlx-whisper by measuring; Voice into agent; Piper reply; Sent",
+    "done": "WAV plays back"
+  },
+  {
+    "w": 6,
+    "from": "2026-11-28",
+    "to": "2026-12-04",
+    "focus": "Ship: Minimal React chat page (cuttable); Show tool calls + sources (cuttable); Diagram + README draft; Clean install from README in a fresh folde",
+    "done": "Streams a reply in browser"
+  }
+];
+const DAYS = [
+  {
+    "n": 1,
+    "date": "2026-10-24",
+    "task": "Setup: run `scripts/setup.sh`, confirm repo pushes to GitHub",
+    "done": "Model answers in terminal; `scripts/test.sh` passes",
+    "w": 1
+  },
+  {
+    "n": 2,
+    "date": "2026-10-25",
+    "task": "Real-model chat check (history, `/reset`)",
+    "done": "It remembers your previous message",
+    "w": 1
+  },
+  {
+    "n": 3,
+    "date": "2026-10-26",
+    "task": "Config + logging + more tests",
+    "done": "Changing model needs no code edit",
+    "w": 1
+  },
+  {
+    "n": 4,
+    "date": "2026-10-27",
+    "task": "Tool calling with `get_time` on the real model",
+    "done": "Model calls `get_time` by itself",
+    "w": 1
+  },
+  {
+    "n": 5,
+    "date": "2026-10-28",
+    "task": "`list_notes`, `read_note` on real notes",
+    "done": "Test proves `../` blocked; model reads a note",
+    "w": 1
+  },
+  {
+    "n": 6,
+    "date": "2026-10-29",
+    "task": "API `/chat` streaming",
+    "done": "`curl -N` returns a streamed reply",
+    "w": 1
+  },
+  {
+    "n": 7,
+    "date": "2026-10-30",
+    "task": "Catch-up",
+    "done": "n/a",
+    "w": 1
+  },
+  {
+    "n": 8,
+    "date": "2026-10-31",
+    "task": "Read current MCP docs; hello server, 1 tool",
+    "done": "Inspector lists and calls it",
+    "w": 2
+  },
+  {
+    "n": 9,
+    "date": "2026-11-01",
+    "task": "Share tool functions between agent and MCP",
+    "done": "Both call the same function",
+    "w": 2
+  },
+  {
+    "n": 10,
+    "date": "2026-11-02",
+    "task": "Expose `list_notes`, `read_note`",
+    "done": "Inspector reads a note",
+    "w": 2
+  },
+  {
+    "n": 11,
+    "date": "2026-11-03",
+    "task": "Connect Claude Desktop",
+    "done": "Claude Desktop lists your notes",
+    "w": 2
+  },
+  {
+    "n": 12,
+    "date": "2026-11-04",
+    "task": "Validation, errors, timeouts",
+    "done": "Bad input returns clear error",
+    "w": 2
+  },
+  {
+    "n": 13,
+    "date": "2026-11-05",
+    "task": "MCP smoke test + pytest",
+    "done": "`scripts/test.sh` passes",
+    "w": 2
+  },
+  {
+    "n": 14,
+    "date": "2026-11-06",
+    "task": "Catch-up",
+    "done": "n/a",
+    "w": 2
+  },
+  {
+    "n": 15,
+    "date": "2026-11-07",
+    "task": "Embedded Qdrant, create collection",
+    "done": "Insert one vector and read it back",
+    "w": 3
+  },
+  {
+    "n": 16,
+    "date": "2026-11-08",
+    "task": "Embeddings via Ollama",
+    "done": "Vector size logged and constant",
+    "w": 3
+  },
+  {
+    "n": 17,
+    "date": "2026-11-09",
+    "task": "Chunk + ingest 20 real notes",
+    "done": "Count matches",
+    "w": 3
+  },
+  {
+    "n": 18,
+    "date": "2026-11-10",
+    "task": "`search_notes(query, k)`",
+    "done": "5 hand-picked queries hit the right note",
+    "w": 3
+  },
+  {
+    "n": 19,
+    "date": "2026-11-11",
+    "task": "Feed chunks into answers, cite filename",
+    "done": "Answers from an old note and names it",
+    "w": 3
+  },
+  {
+    "n": 20,
+    "date": "2026-11-12",
+    "task": "`search_notes` as agent + MCP tool",
+    "done": "Claude Desktop searches notes",
+    "w": 3
+  },
+  {
+    "n": 21,
+    "date": "2026-11-13",
+    "task": "Catch-up",
+    "done": "n/a",
+    "w": 3
+  },
+  {
+    "n": 22,
+    "date": "2026-11-14",
+    "task": "20-question eval set + script",
+    "done": "Prints hit@3",
+    "w": 4
+  },
+  {
+    "n": 23,
+    "date": "2026-11-15",
+    "task": "Tune chunk size and k",
+    "done": "Before/after table with real numbers",
+    "w": 4
+  },
+  {
+    "n": 24,
+    "date": "2026-11-16",
+    "task": "`remember` with y/n confirm",
+    "done": "Fact survives a restart",
+    "w": 4
+  },
+  {
+    "n": 25,
+    "date": "2026-11-17",
+    "task": "Incremental ingest (hash files)",
+    "done": "Second ingest embeds 0 new chunks",
+    "w": 4
+  },
+  {
+    "n": 26,
+    "date": "2026-11-18",
+    "task": "Prompt-injection test",
+    "done": "Documented result, no unconfirmed write",
+    "w": 4
+  },
+  {
+    "n": 27,
+    "date": "2026-11-19",
+    "task": "Memory tests on temp store",
+    "done": "Tests never touch real data",
+    "w": 4
+  },
+  {
+    "n": 28,
+    "date": "2026-11-20",
+    "task": "Catch-up + checkpoint",
+    "done": "n/a",
+    "w": 4
+  },
+  {
+    "n": 29,
+    "date": "2026-11-21",
+    "task": "Push-to-talk recording to WAV",
+    "done": "WAV plays back",
+    "w": 5
+  },
+  {
+    "n": 30,
+    "date": "2026-11-22",
+    "task": "Whisper transcription; choose faster-whisper vs mlx-whisper by measuring",
+    "done": "3 clips transcribed correctly",
+    "w": 5
+  },
+  {
+    "n": 31,
+    "date": "2026-11-23",
+    "task": "Voice into agent",
+    "done": "Spoken question gets a text answer",
+    "w": 5
+  },
+  {
+    "n": 32,
+    "date": "2026-11-24",
+    "task": "Piper reply",
+    "done": "Reply is spoken",
+    "w": 5
+  },
+  {
+    "n": 33,
+    "date": "2026-11-25",
+    "task": "Sentence-by-sentence speech; measure time to first audio",
+    "done": "Number in README",
+    "w": 5
+  },
+  {
+    "n": 34,
+    "date": "2026-11-26",
+    "task": "SRT export (cuttable)",
+    "done": "SRT plays in VLC",
+    "w": 5
+  },
+  {
+    "n": 35,
+    "date": "2026-11-27",
+    "task": "Catch-up",
+    "done": "n/a",
+    "w": 5
+  },
+  {
+    "n": 36,
+    "date": "2026-11-28",
+    "task": "Minimal React chat page (cuttable)",
+    "done": "Streams a reply in browser",
+    "w": 6
+  },
+  {
+    "n": 37,
+    "date": "2026-11-29",
+    "task": "Show tool calls + sources (cuttable)",
+    "done": "Source filename visible",
+    "w": 6
+  },
+  {
+    "n": 38,
+    "date": "2026-11-30",
+    "task": "Diagram + README draft",
+    "done": "Diagram renders on GitHub",
+    "w": 6
+  },
+  {
+    "n": 39,
+    "date": "2026-12-01",
+    "task": "Clean install from README in a fresh folder",
+    "done": "Zero undocumented steps",
+    "w": 6
+  },
+  {
+    "n": 40,
+    "date": "2026-12-02",
+    "task": "2-minute demo video",
+    "done": "Recorded",
+    "w": 6
+  },
+  {
+    "n": 41,
+    "date": "2026-12-03",
+    "task": "Someone else runs it from the README; tag v0.1",
+    "done": "They reach a working reply",
+    "w": 6
+  },
+  {
+    "n": 42,
+    "date": "2026-12-04",
+    "task": "Buffer / deadline",
+    "done": "n/a",
+    "w": 6
+  }
+];
+// ---- END DATA ----
+
+const KEY="jarvis-sprint-log-v1";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today=()=>new Date().toISOString().slice(0,10);
+const weekOf=d=>(PLAN.find(p=>d>=p.from&&d<=p.to)||{}).w||"";
+let log=[];
+try{log=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){log=[]}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(log))}catch(e){}};
+
+$("#goal").textContent=GOAL;
+$("#rules").innerHTML=RULES.map(r=>`<li>${esc(r)}</li>`).join("");
+$("#plan").innerHTML="<tr><th>Week</th><th>Dates</th><th>Focus</th><th>Done when</th><th>Days logged</th></tr>"+
+  PLAN.map(p=>{
+    const n=log.filter(e=>e.week==p.w).length;
+    return `<tr class="${weekOf(today())==p.w?"now":""}"><td>${p.w}</td><td>${p.from.slice(5)} – ${p.to.slice(5)}</td><td>${esc(p.focus)}</td><td>${esc(p.done)}</td><td>${n}</td></tr>`;
+  }).join("");
+$("select[name=week]").innerHTML=PLAN.map(p=>`<option value="${p.w}">Week ${p.w}</option>`).join("");
+$("input[name=date]").value=today();
+$("select[name=week]").value=weekOf(today())||1;
+$("input[name=date]").onchange=e=>{const w=weekOf(e.target.value);if(w)$("select[name=week]").value=w};
+
+function render(){
+  log.sort((a,b)=>b.date.localeCompare(a.date));
+  const hrs=log.reduce((s,e)=>s+(+e.hours||0),0);
+  $("#stats").innerHTML=`<div class="stat">Entries: <b>${log.length}</b></div><div class="stat">Hours: <b>${hrs}</b></div>`;
+  $("#log").innerHTML=log.length?log.map((e,i)=>`<div class="entry"><b>${esc(e.date)}</b> · Week ${esc(e.week)} · ${esc(e.hours)}h
+    <div>${esc(e.did)}</div>
+    ${e.check?`<div class="mut">Check: ${esc(e.check)}</div>`:""}
+    ${e.broke?`<div class="mut">Broke: ${esc(e.broke)}</div>`:""}
+    <div>Next session: ${esc(e.next)}</div>
+    <button class="alt" data-i="${i}">Delete</button></div>`).join(""):'<p class="mut">No entries yet. Notion export had no log data, so start fresh here.</p>';
+}
+$("#log").onclick=e=>{const i=e.target.dataset.i;if(i!==undefined&&confirm("Delete this entry?")){log.splice(+i,1);save();render()}};
+$("#f").onsubmit=e=>{e.preventDefault();log.push(Object.fromEntries(new FormData(e.target)));save();e.target.reset();
+  $("input[name=date]").value=today();$("input[name=hours]").value=1;$("select[name=week]").value=weekOf(today())||1;render();location.reload()};
+$("#sum").onclick=()=>{
+  const w=+$("select[name=week]").value, es=log.filter(e=>e.week==w), p=PLAN.find(x=>x.w==w);
+  $("#out").hidden=false;
+  $("#out").textContent=[
+    `Jarvis Week ${w} summary`,
+    `Shipped: ${es.map(e=>e.did).join("; ")||"nothing logged"}`,
+    `Repo link: <add>`,
+    `Broke: ${es.map(e=>e.broke).filter(Boolean).join("; ")||"nothing logged"}`,
+    `Hours: ${es.reduce((s,e)=>s+(+e.hours||0),0)} | Left: target was "${p.done}" | Next: ${(es[0]||{}).next||"?"}`
+  ].join("\n");
+};
+$("#exp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(log,null,2)],{type:"application/json"}));a.download="jarvis-log.json";a.click()};
+$("#imp").onclick=()=>{const i=document.createElement("input");i.type="file";i.accept=".json";
+  i.onchange=async()=>{try{const d=JSON.parse(await i.files[0].text());if(Array.isArray(d)){log=d;save();render();location.reload()}}catch(e){alert("Bad file")}};i.click()};
+(function(){
+  const t=today(), d=DAYS.find(x=>x.date===t)||DAYS.find(x=>x.date>t);
+  const el=document.getElementById('today');
+  if(!d){el.textContent='No task scheduled.';return}
+  const isToday=d.date===t;
+  el.innerHTML=`<b>${isToday?'Today':'Next'}: Day ${d.n} (${esc(d.date)})</b><div>${esc(d.task)}</div><div class="mut">Done when: ${esc(d.done)}</div>`;
+})();
+render();
+</script>
+</body>
+</html>
