@@ -59,6 +59,23 @@ def ingest_notes() -> int:
     return 0 if res.stored_total == res.chunks else 1
 
 
+def search_cmd(query: str, k: int) -> int:
+    from .memory.search import search_notes
+    from .memory.store import StoreError
+
+    cfg = load_config()
+    llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
+    try:
+        hits = search_notes(cfg, llm.embed, query, k)
+    except (LLMError, StoreError) as exc:
+        print(f"search failed: {exc}")
+        return 1
+    for i, h in enumerate(hits, 1):
+        snippet = " ".join(h.text.split())[:140]
+        print(f"{i}. {h.score:.3f}  {h.file} (chunk {h.chunk})\n   {snippet}")
+    return 0
+
+
 def chat_loop() -> int:
     cfg = load_config()
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds)
@@ -93,8 +110,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="jarvis")
     parser.add_argument("--doctor", action="store_true", help="check setup and exit")
     parser.add_argument("--ingest", action="store_true", help="embed the notes into the index and exit")
+    parser.add_argument("--search", metavar="QUERY", help="search the note index and exit")
+    parser.add_argument("-k", type=int, default=3, help="how many results for --search")
     args = parser.parse_args()
-    sys.exit(doctor() if args.doctor else ingest_notes() if args.ingest else chat_loop())
+    if args.doctor:
+        sys.exit(doctor())
+    if args.ingest:
+        sys.exit(ingest_notes())
+    if args.search is not None:
+        sys.exit(search_cmd(args.search, args.k))
+    sys.exit(chat_loop())
 
 
 if __name__ == "__main__":

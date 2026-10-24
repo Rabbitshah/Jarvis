@@ -199,14 +199,14 @@ const DAYS = [
     "n": 11,
     "date": "2026-11-03",
     "task": "Chunk and ingest 20 real notes",
-    "done": "Code done early (Oct 24), 71 tests pass; dry run says 20 notes = 38 chunks. NOT yet run with the real model: bash scripts/ingest.sh must print MATCH",
+    "done": "DONE early (Oct 24): scripts/ingest.sh on the Mac: 20 notes, 38 chunks in the index, MATCH",
     "w": 3
   },
   {
     "n": 12,
     "date": "2026-11-04",
     "task": "search_notes(query, k)",
-    "done": "5 test queries hit the right note",
+    "done": "Code done early (Oct 24), 76 tests pass. NOT yet run on real data: bash scripts/search-eval.sh (5 cases in notes/eval-cases.toml); pass = right note in the top 3",
     "w": 3
   },
   {
@@ -441,6 +441,13 @@ const LOG = [
     "did": "Day 10 verified on the Mac (vector size 768, constant). Day 11 code: chunker (paragraphs kept whole, 800 chars max, headings stay with their text), ingest (full re-ingest, skips README.md and sample-*), `jarvis --ingest`, scripts/ingest.sh. 71 tests pass. Dry run: 20 real notes = 38 chunks",
     "broke": "Heading-glue bug in the first chunker caught by a test, fixed. Several notes overlap (two Jarvis notes, two portfolio notes, projects vs per-project notes), so search may return near-duplicates",
     "next": "Run scripts/ingest.sh on the Mac (expect 38 chunks, MATCH), then Day 12: search_notes with 5 test queries"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 11 verified on the Mac (20 notes, 38 chunks, MATCH). Day 12 code: search_notes (empty/long query and missing index give clear errors, k capped at 10), `jarvis --search \"...\"`, scripts/search-eval.sh with 5 cases in notes/eval-cases.toml (private). 76 tests pass",
+    "broke": "Notes disagree on the Jarvis voice: 06-jarvis-project says ElevenLabs and \"cloud vs local\" is open, 08-jarvis says fully local with Piper. Search cannot fix that; one note must be corrected",
+    "next": "Run scripts/search-eval.sh on the Mac, paste the table. Then Day 13: feed chunks into answers and cite the file name"
   }
 ];
 // ---- END DATA ----
