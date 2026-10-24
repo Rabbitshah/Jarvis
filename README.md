@@ -14,6 +14,8 @@ scripts/run.sh --api    # HTTP API on 127.0.0.1:8000
 scripts/test.sh         # unit tests (no model needed)
 scripts/doctor.sh       # checks Ollama, model and notes folder
 scripts/mcp-smoke.sh    # starts the MCP server and calls each tool once
+scripts/ingest.sh       # embed notes/ into the local index (re-run after changing notes)
+scripts/search-eval.sh  # check that test questions find the right note
 ```
 
 Nothing is installed outside this folder (see "Where things live"). Deleting the folder removes everything.
@@ -23,16 +25,17 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | Feature | Status |
 | --- | --- |
 | Terminal chat with streaming + history | built, unit-tested |
-| Tool calling loop (`get_time`, `list_notes`, `read_note`) | built, unit-tested |
+| Tool calling loop (`get_time`, `list_notes`, `read_note`, `search_notes`) | built, unit-tested |
 | Notes sandbox (blocks `../`, absolute paths, symlink escape) | built, unit-tested |
 | Streaming API (`POST /chat`, `GET /health`) | built, unit-tested |
 | MCP server (same tools as the agent, over stdio) | built, unit-tested, smoke script |
 | Input checks + 10 s tool timeout | built, unit-tested |
-| Qdrant memory, voice, web UI | planned, see `docs/PLAN.md` |
+| Note memory: ingest, search by meaning, excerpts in answers (embedded Qdrant) | built, unit-tested; run `scripts/ingest.sh` after adding notes |
+| Voice, web UI | planned, see `docs/PLAN.md` |
 
 ## Run the MCP server locally
 
-The MCP server gives any MCP client the same three tools the chat agent uses (`get_time`, `list_notes`, `read_note`). It needs no model and no internet.
+The MCP server gives any MCP client the same four tools the chat agent uses (`get_time`, `list_notes`, `read_note`, `search_notes`). Only `search_notes` needs Ollama running (for the embedding model) and an ingested index; the rest work offline.
 
 ```bash
 scripts/mcp-smoke.sh   # quickest check: starts the server, calls every tool, prints PASS/FAIL

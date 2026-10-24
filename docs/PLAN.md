@@ -29,8 +29,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 10 | Mon Nov 2 | Embeddings through Ollama | DONE early (Oct 24): doctor on the Mac prints vector size 768 (constant) |
 | 11 | Tue Nov 3 | Chunk and ingest 20 real notes | DONE early (Oct 24): scripts/ingest.sh on the Mac: 20 notes, 38 chunks in the index, MATCH |
 | 12 | Wed Nov 4 | search_notes(query, k) | DONE early (Oct 24): search-eval on the Mac: top-3 5/5, top-1 4/5 (the miss ranked 2nd) |
-| 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Code done early (Oct 24), 81 tests pass. NOT yet checked with the real model: ask a notes question in scripts/run.sh; the answer must come from the note and name the file |
-| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Inspector finds notes by meaning |
+| 13 | Thu Nov 5 | Feed chunks into answers, cite filename | DONE early (Oct 24): on the Mac, 2 note questions answered correctly and named the file; the time question used no notes |
+| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Code done early (Oct 24), 83 tests pass. NOT yet run on the Mac: bash scripts/mcp-smoke.sh must pass the new search check, then try search_notes in the Inspector |
 | 15 | Sat Nov 7 | Catch-up | n/a |
 
 ## Week 4 (Nov 8-14): Measure and harden

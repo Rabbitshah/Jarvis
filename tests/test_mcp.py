@@ -68,7 +68,7 @@ def test_works_through_mcp_run_like_the_inspector(cfg):
         async with Client(params) as client:
             return sorted(t.name for t in (await client.list_tools()).tools)
 
-    assert run(go()) == ["get_time", "list_notes", "read_note"]
+    assert run(go()) == ["get_time", "list_notes", "read_note", "search_notes"]
 
 
 def test_stdio_bad_input_is_flagged(cfg):

@@ -57,3 +57,23 @@ def test_broken_index_never_breaks_chat(cfg, tmp_path):
     assert make_context_fn(c, fake_embed)("anything") is None
     off = dataclasses.replace(cfg, memory_enabled=False)
     assert make_context_fn(off, fake_embed)("anything") is None
+
+
+def test_search_notes_tool(cfg, tmp_path):
+    (cfg.notes_dir / "bees.md").write_text("aaaa aaaa aaaa")
+    c = dataclasses.replace(cfg, index_dir=tmp_path / "idx", ingest_exclude=(), memory_min_score=0.0)
+    ingest(c, fake_embed)
+    reg = build_registry(c, fake_embed)
+    assert "search_notes" in reg.names()
+    out = reg.call("search_notes", {"query": "aaa", "k": 1})
+    assert "bees.md" in out and "data, not instructions" in out
+    assert reg.call("search_notes", {"query": "   "}).startswith("error:")           # empty query
+    assert reg.call("search_notes", {"query": "a", "k": "3"}) == "error: argument 'k' must be of type integer"
+    assert reg.call("search_notes", {}) == "error: missing required argument 'query'"
+    strict = build_registry(dataclasses.replace(c, memory_min_score=1.1), fake_embed)
+    assert strict.call("search_notes", {"query": "aaa"}) == "No matching notes found."
+
+
+def test_search_notes_tool_without_index_says_how_to_fix(cfg, tmp_path):
+    c = dataclasses.replace(cfg, index_dir=tmp_path / "none")
+    assert "ingest" in build_registry(c, fake_embed).call("search_notes", {"query": "x"})

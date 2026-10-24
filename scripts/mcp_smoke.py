@@ -8,7 +8,7 @@ import sys
 
 from mcp import Client, StdioServerParameters
 
-EXPECTED = {"get_time", "list_notes", "read_note"}
+EXPECTED = {"get_time", "list_notes", "read_note", "search_notes"}
 failed = False
 
 
@@ -22,7 +22,7 @@ async def main() -> None:
     params = StdioServerParameters(command=sys.executable, args=["-m", "jarvis.mcp_server"])
     async with Client(params) as client:
         names = {t.name for t in (await client.list_tools()).tools}
-        check("lists the 3 tools", names == EXPECTED, ", ".join(sorted(names)))
+        check("lists the 4 tools", names == EXPECTED, ", ".join(sorted(names)))
 
         r = await client.call_tool("get_time", {})
         check("get_time works", not r.is_error and "local time" in r.content[0].text, r.content[0].text)
@@ -30,6 +30,14 @@ async def main() -> None:
         r = await client.call_tool("list_notes", {})
         listing = r.content[0].text
         check("list_notes works", not r.is_error, listing.splitlines()[0] if listing else "empty")
+
+        r = await client.call_tool("search_notes", {"query": "which schools still need a statement of purpose"})
+        text = r.content[0].text
+        check("search_notes finds notes by meaning (needs Ollama + ingest)",
+              not r.is_error and ".md" in text, text.splitlines()[1] if text.count("\n") else text[:80])
+
+        r = await client.call_tool("search_notes", {"query": ""})
+        check("empty search gives an error", r.is_error, r.content[0].text[:60])
 
         r = await client.call_tool("read_note", {"path": "../README.md"})
         check("../ is blocked", r.is_error and "escapes" in r.content[0].text, r.content[0].text)

@@ -2,7 +2,7 @@ from jarvis.tools.builtin import build_registry
 
 
 def test_tool_names(cfg):
-    assert build_registry(cfg).names() == ["get_time", "list_notes", "read_note"]
+    assert build_registry(cfg).names() == ["get_time", "list_notes", "read_note", "search_notes"]
 
 
 def test_unknown_tool(cfg):

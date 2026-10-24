@@ -213,14 +213,14 @@ const DAYS = [
     "n": 13,
     "date": "2026-11-05",
     "task": "Feed chunks into answers, cite filename",
-    "done": "Code done early (Oct 24), 81 tests pass. NOT yet checked with the real model: ask a notes question in scripts/run.sh; the answer must come from the note and name the file",
+    "done": "DONE early (Oct 24): on the Mac, 2 note questions answered correctly and named the file; the time question used no notes",
     "w": 3
   },
   {
     "n": 14,
     "date": "2026-11-06",
     "task": "search_notes as agent and MCP tool",
-    "done": "Inspector finds notes by meaning",
+    "done": "Code done early (Oct 24), 83 tests pass. NOT yet run on the Mac: bash scripts/mcp-smoke.sh must pass the new search check, then try search_notes in the Inspector",
     "w": 3
   },
   {
@@ -455,6 +455,13 @@ const LOG = [
     "did": "Day 12 verified on the Mac (top-3 5/5, top-1 4/5). Day 13 code: each question now searches the notes; excerpts scoring above [memory] min_score go to the model for that turn only (history stays plain), framed as data not instructions, with a request to name the file. New \"sources\" event lists the notes shown. A broken or missing index never breaks chat. search-eval now also prints off-topic scores to pick min_score. 81 tests pass",
     "broke": "min_score 0.5 is a guess until search-eval prints real scores. Excerpts plus tools must fit the model context window (Ollama default may be small); not measured",
     "next": "Run scripts/search-eval.sh and paste it (sets min_score), then try 3 note questions in scripts/run.sh"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 13 verified on the Mac: 2 note questions answered correctly with (source: file); time question used no notes. Real scores: right note 0.487-0.721, off-topic 0.419-0.486, so min_score stays 0.5. Day 14 code: search_notes is now a tool in the shared registry, so the agent and the MCP server both have it. Weak matches return \"No matching notes found.\" Prompt tells the model when to use it. Smoke script checks 4 tools plus a search. 83 tests pass",
+    "broke": "Right and wrong scores nearly touch (0.487 vs 0.486): 5 + 5 questions is too few to trust 0.5. The model still called read_note after getting excerpts (correct but slow). Now three paths overlap: auto excerpts, search_notes, read_note",
+    "next": "Run scripts/test.sh and scripts/mcp-smoke.sh on the Mac, then try search_notes in the Inspector (scripts/mcp-dev.sh)"
   }
 ];
 // ---- END DATA ----
