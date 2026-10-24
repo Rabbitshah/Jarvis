@@ -1,4 +1,8 @@
-"""The built-in tool set. Keep it small: small local models pick tools badly when there are many."""
+"""The single tool set. The agent and the MCP server both register these exact functions.
+
+Keep it small: small local models pick tools badly when there are many.
+Type hints matter: the MCP server builds its input schema from them.
+"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -15,19 +19,27 @@ def _now_text() -> str:
 
 
 def build_registry(cfg: Config) -> Registry:
-    reg = Registry()
+    def get_time() -> str:
+        return _now_text()
 
+    def list_notes() -> str:
+        return notes.list_notes(cfg.notes_dir)
+
+    def read_note(path: str) -> str:
+        return notes.read_note(cfg.notes_dir, path)
+
+    reg = Registry()
     reg.register(Tool(
         name="get_time",
         description="Get the current local date and time.",
         parameters={"type": "object", "properties": {}},
-        fn=_now_text,
+        fn=get_time,
     ))
     reg.register(Tool(
         name="list_notes",
         description="List the user's note files (relative paths).",
         parameters={"type": "object", "properties": {}},
-        fn=lambda: notes.list_notes(cfg.notes_dir),
+        fn=list_notes,
     ))
     reg.register(Tool(
         name="read_note",
@@ -37,6 +49,6 @@ def build_registry(cfg: Config) -> Registry:
             "properties": {"path": {"type": "string", "description": "relative note path"}},
             "required": ["path"],
         },
-        fn=lambda path: notes.read_note(cfg.notes_dir, path),
+        fn=read_note,
     ))
     return reg

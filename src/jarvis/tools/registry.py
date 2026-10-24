@@ -30,6 +30,9 @@ class Registry:
             raise ValueError(f"duplicate tool: {tool.name}")
         self._tools[tool.name] = tool
 
+    def tools(self) -> list[Tool]:
+        return [self._tools[n] for n in sorted(self._tools)]
+
     def names(self) -> list[str]:
         return sorted(self._tools)
 

@@ -14,7 +14,7 @@
                                 │                                   └─ remember (week 4, confirm first)
                                 └──► Voice (week 5): mic → Whisper → Agent → Piper → speaker
 ```
-The CLI and API call the same `Agent`. The MCP server (week 2) will import the same tool functions.
+The CLI and API call the same `Agent`. The MCP server (`mcp_server.py`) registers the same tool functions from `tools/builtin.py`; `tests/test_mcp.py` fails if the two schemas drift apart.
 
 ## Components
 | Module | Job | Notes |

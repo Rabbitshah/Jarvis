@@ -143,7 +143,7 @@ const DAYS = [
     "n": 3,
     "date": "2026-10-26",
     "task": "Share tool functions between agent and MCP",
-    "done": "Both call the same function",
+    "done": "DONE early (Oct 24): MCP registers the agent's own functions; a test fails if schemas drift",
     "w": 2
   },
   {
@@ -392,6 +392,13 @@ const LOG = [
     "did": "Pushed to GitHub. Day 2 done early: read current MCP docs, hello MCP server, SDK client test. 35 tests pass. Inspector on the Mac runs hello",
     "broke": "MCP SDK is now v2 (MCPServer, not FastMCP). My memory of the old API was wrong, so I checked the docs first",
     "next": "Day 3: share tool functions between agent and MCP"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 3 done early: MCP server now exposes the agent's real tools (get_time, list_notes, read_note) from one shared place. Drift test added. 36 tests pass",
+    "broke": "The SDK hides non-MCP error text, so sandbox errors came back blank. Fixed with a small wrapper",
+    "next": "Day 4: expose notes tools and check them in the Inspector"
   }
 ];
 // ---- END DATA ----
