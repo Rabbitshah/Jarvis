@@ -36,8 +36,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 ## Week 4 (Nov 8-14): Measure and harden
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 16 | Sun Nov 8 | 20 question test set and script | Code done early (Oct 24): 20 cases in notes/eval-cases.toml, script prints top-1, hit@3 and MRR. NOT yet run: bash scripts/search-eval.sh on the Mac |
-| 17 | Mon Nov 9 | Tune chunk size and k | Before and after table with real numbers |
+| 16 | Sun Nov 8 | 20 question test set and script | DONE early (Oct 24): 20 cases; baseline on the Mac: top-1 16/20, hit@3 19/20, MRR 0.875 |
+| 17 | Mon Nov 9 | Tune chunk size and k | Code done early (Oct 24), 86 tests pass; dry run with fake embeddings OK. NOT yet run on the Mac: bash scripts/tune.sh writes docs/TUNING.md (12 variants: chunk size x header x task prefix) |
 | 18 | Tue Nov 10 | remember tool with y/n confirm | Fact survives a restart |
 | 19 | Wed Nov 11 | Incremental ingest (hash files) | Second ingest embeds 0 new chunks |
 | 20 | Thu Nov 12 | Prompt injection test | Result written down, no write without confirm |

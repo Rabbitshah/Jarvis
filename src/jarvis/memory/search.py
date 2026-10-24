@@ -20,7 +20,7 @@ def search_notes(cfg: Config, embed: Embed, query: str, k: int = 3) -> list[Hit]
     k = max(1, min(int(k), MAX_K))
     if not cfg.index_dir.is_dir():  # do not create an empty index as a side effect of a search
         raise StoreError("The note index does not exist yet. Run scripts/ingest.sh first")
-    vector = embed([query])[0]
+    vector = embed([cfg.memory_query_prefix + query])[0]
     with VectorStore(cfg.index_dir, len(vector)) as store:
         if store.count() == 0:
             raise StoreError("The note index is empty. Run scripts/ingest.sh first")

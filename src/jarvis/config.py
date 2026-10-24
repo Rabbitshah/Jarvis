@@ -26,6 +26,10 @@ class Config:
     memory_enabled: bool
     memory_k: int
     memory_min_score: float
+    memory_chunk_chars: int
+    memory_note_header: bool
+    memory_doc_prefix: str
+    memory_query_prefix: str
     api_host: str
     api_port: int
 
@@ -59,6 +63,10 @@ def load_config(path: str | Path | None = None) -> Config:
         memory_enabled=bool(memory.get("enabled", True)),
         memory_k=int(memory.get("k", 3)),
         memory_min_score=float(memory.get("min_score", 0.5)),
+        memory_chunk_chars=int(memory.get("chunk_chars", 800)),
+        memory_note_header=bool(memory.get("note_header", True)),
+        memory_doc_prefix=str(memory.get("doc_prefix", "")),
+        memory_query_prefix=str(memory.get("query_prefix", "")),
         api_host=api["host"],
         api_port=int(api["port"]),
     )

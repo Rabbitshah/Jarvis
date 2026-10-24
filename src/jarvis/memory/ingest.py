@@ -9,7 +9,7 @@ from typing import Callable
 
 from ..config import Config
 from ..tools.notes import _note_files, read_note
-from .chunker import DEFAULT_MAX_CHARS, chunk_text
+from .chunker import chunk_text
 from .store import VectorStore
 
 BATCH = 16
@@ -32,12 +32,14 @@ def _skip(name: str, patterns: tuple[str, ...]) -> bool:
     return any(fnmatch.fnmatch(base, p) or fnmatch.fnmatch(name, p) for p in patterns)
 
 
-def embed_text(file: str, chunk: str) -> str:
+def embed_text(file: str, chunk: str, header: bool = True, prefix: str = "") -> str:
     """The file name goes into the embedded text so a question naming a topic finds its note."""
-    return f"Note: {Path(file).stem}\n\n{chunk}"
+    body = f"Note: {Path(file).stem}\n\n{chunk}" if header else chunk
+    return prefix + body
 
 
-def ingest(cfg: Config, embed: Embed, max_chars: int = DEFAULT_MAX_CHARS) -> IngestResult:
+def ingest(cfg: Config, embed: Embed, max_chars: int | None = None) -> IngestResult:
+    max_chars = max_chars or cfg.memory_chunk_chars
     result = IngestResult()
     plan: list[tuple[str, list[str]]] = []
     for name in _note_files(cfg.notes_dir):
@@ -54,7 +56,7 @@ def ingest(cfg: Config, embed: Embed, max_chars: int = DEFAULT_MAX_CHARS) -> Ing
     vectors: list[list[float]] = []
     for start in range(0, len(flat), BATCH):
         batch = flat[start:start + BATCH]
-        vectors.extend(embed([embed_text(f, c) for f, _i, c in batch]))
+        vectors.extend(embed([embed_text(f, c, cfg.memory_note_header, cfg.memory_doc_prefix) for f, _i, c in batch]))
     if not flat:
         return result
     dim = len(vectors[0])
