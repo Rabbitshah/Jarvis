@@ -1,7 +1,7 @@
 """Run the search test cases in notes/eval-cases.toml against the real index.
 
-Each case: a question and the one note that should answer it. Prints where it ranked.
-Pass = the right note is in the top 3. Exit code 1 if any case fails.
+Each case: a question and the note that should answer it (or a list: any of them counts).
+Prints where it ranked. Pass = a right note is in the top 3. Exit code 1 if any case fails.
 Run: bash scripts/search-eval.sh
 """
 import sys
@@ -20,6 +20,7 @@ cases = tomllib.loads(path.read_text(encoding="utf-8"))["case"]
 llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
 
 top1 = top3 = 0
+rr = 0.0  # reciprocal ranks: 1 for rank 1, 0.5 for rank 2, 0.33 for rank 3, 0 for a miss
 relevant: list[float] = []
 print(f"{'rank':<5} {'expected note':<38} question")
 for case in cases:
@@ -28,15 +29,18 @@ for case in cases:
         files = [h.file for h in hits]
     except (LLMError, StoreError) as exc:
         sys.exit(f"search failed: {exc}")
-    rank = files.index(case["note"]) + 1 if case["note"] in files else None
-    right = [h.score for h in hits if h.file == case["note"]]
+    wanted = case["note"] if isinstance(case["note"], list) else [case["note"]]
+    ranks = [files.index(w) + 1 for w in wanted if w in files]
+    rank = min(ranks) if ranks else None
+    rr += 1 / rank if rank else 0
+    right = [h.score for h in hits if h.file in wanted]
     if right:
         relevant.append(max(right))
     top1 += rank == 1
     top3 += rank is not None
-    print(f"{rank or 'MISS':<5} {case['note']:<38} {case['question']}" + ("" if rank == 1 else f"   got: {', '.join(files)}"))
+    print(f"{rank or 'MISS':<5} {'|'.join(wanted):<38} {case['question']}" + ("" if rank == 1 else f"   got: {', '.join(files)}"))
 n = len(cases)
-print(f"\ntop-1: {top1}/{n}   top-3: {top3}/{n}")
+print(f"\ntop-1: {top1}/{n}   top-3 (hit@3): {top3}/{n}   MRR: {rr / n:.3f}")
 
 # Calibration for [memory] min_score: questions that no note should answer.
 off = []

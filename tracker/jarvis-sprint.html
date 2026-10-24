@@ -107,7 +107,7 @@ const PLAN = [
     "from": "2026-11-08",
     "to": "2026-11-14",
     "focus": "Measure and harden: 20 question test set and script; Tune chunk size and k; remember tool with y/n confirm; Incremental ingest (hash files); Prompt injection te",
-    "done": "Prints hit@3"
+    "done": "Code done early (Oct 24): 20 cases in notes/eval-cases.toml, script prints top-1, hit@3 and MRR. NOT yet run: bash scripts/search-eval.sh on the Mac"
   },
   {
     "w": 5,
@@ -220,21 +220,21 @@ const DAYS = [
     "n": 14,
     "date": "2026-11-06",
     "task": "search_notes as agent and MCP tool",
-    "done": "Code done early (Oct 24), 83 tests pass. NOT yet run on the Mac: bash scripts/mcp-smoke.sh must pass the new search check, then try search_notes in the Inspector",
+    "done": "DONE early (Oct 24): mcp-smoke passes with the search check (4 tools); the Inspector returns search_notes answers",
     "w": 3
   },
   {
     "n": 15,
     "date": "2026-11-07",
     "task": "Catch-up",
-    "done": "n/a",
+    "done": "Not needed: week 3 finished early (Oct 24)",
     "w": 3
   },
   {
     "n": 16,
     "date": "2026-11-08",
     "task": "20 question test set and script",
-    "done": "Prints hit@3",
+    "done": "Code done early (Oct 24): 20 cases in notes/eval-cases.toml, script prints top-1, hit@3 and MRR. NOT yet run: bash scripts/search-eval.sh on the Mac",
     "w": 4
   },
   {
@@ -462,6 +462,13 @@ const LOG = [
     "did": "Day 13 verified on the Mac: 2 note questions answered correctly with (source: file); time question used no notes. Real scores: right note 0.487-0.721, off-topic 0.419-0.486, so min_score stays 0.5. Day 14 code: search_notes is now a tool in the shared registry, so the agent and the MCP server both have it. Weak matches return \"No matching notes found.\" Prompt tells the model when to use it. Smoke script checks 4 tools plus a search. 83 tests pass",
     "broke": "Right and wrong scores nearly touch (0.487 vs 0.486): 5 + 5 questions is too few to trust 0.5. The model still called read_note after getting excerpts (correct but slow). Now three paths overlap: auto excerpts, search_notes, read_note",
     "next": "Run scripts/test.sh and scripts/mcp-smoke.sh on the Mac, then try search_notes in the Inspector (scripts/mcp-dev.sh)"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 14 verified on the Mac: mcp-smoke ALL GOOD with the search check, Inspector returns search_notes answers. Week 3 is finished (Day 15 catch-up not needed). Day 16 code: test set grown from 5 to 20 cases (I wrote the 15 new ones from the notes; a case can list several acceptable notes). Script now prints top-1, hit@3 and MRR (average of 1/rank, so rank 1 = 1, rank 2 = 0.5, miss = 0)",
+    "broke": "You pasted the Inspector link with its token in the chat. It only works on your machine while the Inspector runs, but do not share those links",
+    "next": "Run scripts/search-eval.sh on the Mac and paste the table. That is the \"before\" number for Day 17 tuning"
   }
 ];
 // ---- END DATA ----

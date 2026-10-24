@@ -30,13 +30,13 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 11 | Tue Nov 3 | Chunk and ingest 20 real notes | DONE early (Oct 24): scripts/ingest.sh on the Mac: 20 notes, 38 chunks in the index, MATCH |
 | 12 | Wed Nov 4 | search_notes(query, k) | DONE early (Oct 24): search-eval on the Mac: top-3 5/5, top-1 4/5 (the miss ranked 2nd) |
 | 13 | Thu Nov 5 | Feed chunks into answers, cite filename | DONE early (Oct 24): on the Mac, 2 note questions answered correctly and named the file; the time question used no notes |
-| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Code done early (Oct 24), 83 tests pass. NOT yet run on the Mac: bash scripts/mcp-smoke.sh must pass the new search check, then try search_notes in the Inspector |
-| 15 | Sat Nov 7 | Catch-up | n/a |
+| 14 | Fri Nov 6 | search_notes as agent and MCP tool | DONE early (Oct 24): mcp-smoke passes with the search check (4 tools); the Inspector returns search_notes answers |
+| 15 | Sat Nov 7 | Catch-up | Not needed: week 3 finished early (Oct 24) |
 
 ## Week 4 (Nov 8-14): Measure and harden
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 16 | Sun Nov 8 | 20 question test set and script | Prints hit@3 |
+| 16 | Sun Nov 8 | 20 question test set and script | Code done early (Oct 24): 20 cases in notes/eval-cases.toml, script prints top-1, hit@3 and MRR. NOT yet run: bash scripts/search-eval.sh on the Mac |
 | 17 | Mon Nov 9 | Tune chunk size and k | Before and after table with real numbers |
 | 18 | Tue Nov 10 | remember tool with y/n confirm | Fact survives a restart |
 | 19 | Wed Nov 11 | Incremental ingest (hash files) | Second ingest embeds 0 new chunks |
