@@ -1,74 +1,73 @@
 # Plan: Sat Oct 24 to Fri Dec 4, 2026
 
-1 hour per day, 6 task days + 1 catch-up day per week. If you skip a day, drop the lowest-value task of that week. Do not stack a backlog.
-Each day ends with one line: `Next session: ___`, and a `git push`.
+Week 2 was pulled forward on Oct 24. Deadline stays Fri Dec 4, so Nov 29 to Dec 4 is spare buffer.
+1 hour a day. Each week has 6 task days and 1 catch-up day. If you skip a day, drop the least useful task of that week.
+End each day with `Next session: ___` and a `git push`.
 
-## Week 1 (Oct 24-30): Core agent
+## Week 1 (Oct 24-24): Core agent
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 1 | Sat Oct 24 | Setup: run `scripts/setup.sh`, confirm repo pushes to GitHub | Model answers in terminal; `scripts/test.sh` passes |
-| 2 | Sun Oct 25 | Real-model chat check (history, `/reset`) | It remembers your previous message |
-| 3 | Mon Oct 26 | Config + logging + more tests | Changing model needs no code edit |
-| 4 | Tue Oct 27 | Tool calling with `get_time` on the real model | Model calls `get_time` by itself |
-| 5 | Wed Oct 28 | `list_notes`, `read_note` on real notes | Test proves `../` blocked; model reads a note |
-| 6 | Thu Oct 29 | API `/chat` streaming | `curl -N` returns a streamed reply |
-| 7 | Fri Oct 30 | Catch-up | n/a |
+| 1 | Sat Oct 24 | Setup, chat, tools, notes sandbox, API (old days 1 to 6) | DONE: 33 tests pass, API streams a correct answer |
 
-## Week 2 (Oct 31-Nov 6): MCP
+## Week 2 (Oct 25-31): MCP
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 8 | Sat Oct 31 | Read current MCP docs; hello server, 1 tool | Inspector lists and calls it |
-| 9 | Sun Nov 1 | Share tool functions between agent and MCP | Both call the same function |
-| 10 | Mon Nov 2 | Expose `list_notes`, `read_note` | Inspector reads a note |
-| 11 | Tue Nov 3 | Connect Claude Desktop | Claude Desktop lists your notes |
-| 12 | Wed Nov 4 | Validation, errors, timeouts | Bad input returns clear error |
-| 13 | Thu Nov 5 | MCP smoke test + pytest | `scripts/test.sh` passes |
-| 14 | Fri Nov 6 | Catch-up | n/a |
+| 2 | Sun Oct 25 | Read current MCP docs; hello server with 1 tool | Inspector lists and calls it |
+| 3 | Mon Oct 26 | Share tool functions between agent and MCP | Both call the same function |
+| 4 | Tue Oct 27 | Expose list_notes and read_note | Inspector reads a note |
+| 5 | Wed Oct 28 | Connect Claude Desktop | Claude Desktop lists your notes |
+| 6 | Thu Oct 29 | Input checks, errors, timeouts | Bad input gives a clear error |
+| 7 | Fri Oct 30 | MCP smoke test and pytest | scripts/test.sh passes |
+| 8 | Sat Oct 31 | Catch-up | n/a |
 
-## Week 3 (Nov 7-13): Note memory
+## Week 3 (Nov 1-7): Note memory
+Needs about 20 real notes in notes/ before Nov 3.
+
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 15 | Sat Nov 7 | Embedded Qdrant, create collection | Insert one vector and read it back |
-| 16 | Sun Nov 8 | Embeddings via Ollama | Vector size logged and constant |
-| 17 | Mon Nov 9 | Chunk + ingest 20 real notes | Count matches |
-| 18 | Tue Nov 10 | `search_notes(query, k)` | 5 hand-picked queries hit the right note |
-| 19 | Wed Nov 11 | Feed chunks into answers, cite filename | Answers from an old note and names it |
-| 20 | Thu Nov 12 | `search_notes` as agent + MCP tool | Claude Desktop searches notes |
-| 21 | Fri Nov 13 | Catch-up | n/a |
+| 9 | Sun Nov 1 | Embedded Qdrant, create collection | One vector goes in and comes back |
+| 10 | Mon Nov 2 | Embeddings through Ollama | Vector size is logged and constant |
+| 11 | Tue Nov 3 | Chunk and ingest 20 real notes | Count matches |
+| 12 | Wed Nov 4 | search_notes(query, k) | 5 test queries hit the right note |
+| 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Answers from an old note and names it |
+| 14 | Fri Nov 6 | search_notes as agent and MCP tool | Claude Desktop searches notes |
+| 15 | Sat Nov 7 | Catch-up | n/a |
 
-## Week 4 (Nov 14-20): Measure and harden
+## Week 4 (Nov 8-14): Measure and harden
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 22 | Sat Nov 14 | 20-question eval set + script | Prints hit@3 |
-| 23 | Sun Nov 15 | Tune chunk size and k | Before/after table with real numbers |
-| 24 | Mon Nov 16 | `remember` with y/n confirm | Fact survives a restart |
-| 25 | Tue Nov 17 | Incremental ingest (hash files) | Second ingest embeds 0 new chunks |
-| 26 | Wed Nov 18 | Prompt-injection test | Documented result, no unconfirmed write |
-| 27 | Thu Nov 19 | Memory tests on temp store | Tests never touch real data |
-| 28 | Fri Nov 20 | Catch-up + checkpoint | n/a |
+| 16 | Sun Nov 8 | 20 question test set and script | Prints hit@3 |
+| 17 | Mon Nov 9 | Tune chunk size and k | Before and after table with real numbers |
+| 18 | Tue Nov 10 | remember tool with y/n confirm | Fact survives a restart |
+| 19 | Wed Nov 11 | Incremental ingest (hash files) | Second ingest embeds 0 new chunks |
+| 20 | Thu Nov 12 | Prompt injection test | Result written down, no write without confirm |
+| 21 | Fri Nov 13 | Memory tests on a temp store | Tests never touch real data |
+| 22 | Sat Nov 14 | Catch-up and checkpoint | n/a |
 
-## Week 5 (Nov 21-27): Voice
+## Week 5 (Nov 15-21): Voice
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 29 | Sat Nov 21 | Push-to-talk recording to WAV | WAV plays back |
-| 30 | Sun Nov 22 | Whisper transcription; choose faster-whisper vs mlx-whisper by measuring | 3 clips transcribed correctly |
-| 31 | Mon Nov 23 | Voice into agent | Spoken question gets a text answer |
-| 32 | Tue Nov 24 | Piper reply | Reply is spoken |
-| 33 | Wed Nov 25 | Sentence-by-sentence speech; measure time to first audio | Number in README |
-| 34 | Thu Nov 26 | SRT export (cuttable) | SRT plays in VLC |
-| 35 | Fri Nov 27 | Catch-up | n/a |
+| 23 | Sun Nov 15 | Push-to-talk recording to WAV | WAV plays back |
+| 24 | Mon Nov 16 | Whisper transcription; pick faster-whisper or mlx-whisper by measuring | 3 clips transcribed correctly |
+| 25 | Tue Nov 17 | Voice into the agent | Spoken question gets a text answer |
+| 26 | Wed Nov 18 | Piper reply | Reply is spoken |
+| 27 | Thu Nov 19 | Speak sentence by sentence; measure time to first audio | Number is in the README |
+| 28 | Fri Nov 20 | SRT export (cuttable) | SRT plays in VLC |
+| 29 | Sat Nov 21 | Catch-up | n/a |
 
-## Week 6 (Nov 28-Dec 4): Ship
+## Week 6 (Nov 22-28): Ship
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 36 | Sat Nov 28 | Minimal React chat page (cuttable) | Streams a reply in browser |
-| 37 | Sun Nov 29 | Show tool calls + sources (cuttable) | Source filename visible |
-| 38 | Mon Nov 30 | Diagram + README draft | Diagram renders on GitHub |
-| 39 | Tue Dec 1 | Clean install from README in a fresh folder | Zero undocumented steps |
-| 40 | Wed Dec 2 | 2-minute demo video | Recorded |
-| 41 | Thu Dec 3 | Someone else runs it from the README; tag v0.1 | They reach a working reply |
-| 42 | Fri Dec 4 | Buffer / deadline | n/a |
+| 30 | Sun Nov 22 | Minimal React chat page (cuttable) | Streams a reply in the browser |
+| 31 | Mon Nov 23 | Show tool calls and sources (cuttable) | Source filename is visible |
+| 32 | Tue Nov 24 | Diagram and README draft | Diagram shows on GitHub |
+| 33 | Wed Nov 25 | Clean install from the README in a new folder | No undocumented steps |
+| 34 | Thu Nov 26 | 2 minute demo video | Recorded |
+| 35 | Fri Nov 27 | Someone else runs it from the README; tag v0.1 | They get a working reply |
+| 36 | Sat Nov 28 | Spare day | n/a |
 
-## Cut order if 2+ days behind
+Nov 29 to Dec 4 is buffer. Deadline: Fri Dec 4.
+
+## Cut order if 2 or more days behind
 1. SRT export  2. UI source panel  3. React UI  4. Incremental ingest  5. Injection test.
-Never cut: tools, MCP, Qdrant + eval numbers, README.
+Never cut: tools, MCP, Qdrant with eval numbers, README.

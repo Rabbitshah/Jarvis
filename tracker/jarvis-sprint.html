@@ -84,340 +84,307 @@ const PLAN = [
   {
     "w": 1,
     "from": "2026-10-24",
-    "to": "2026-10-30",
-    "focus": "Core agent: Setup: run `scripts/setup.sh`, confirm repo pushes to GitHub; Real-model chat check (history, `/reset`); Config + logging + more tests; Tool",
-    "done": "Model answers in terminal; `scripts/test.sh` passes"
+    "to": "2026-10-24",
+    "focus": "Core agent: Setup, chat, tools, notes sandbox, API (old days 1 to 6)",
+    "done": "DONE: 33 tests pass, API streams a correct answer"
   },
   {
     "w": 2,
-    "from": "2026-10-31",
-    "to": "2026-11-06",
-    "focus": "MCP: Read current MCP docs; hello server, 1 tool; Share tool functions between agent and MCP; Expose `list_notes`, `read_note`; Connect Claude De",
+    "from": "2026-10-25",
+    "to": "2026-10-31",
+    "focus": "MCP: Read current MCP docs; hello server with 1 tool; Share tool functions between agent and MCP; Expose list_notes and read_note; Connect Claude",
     "done": "Inspector lists and calls it"
   },
   {
     "w": 3,
-    "from": "2026-11-07",
-    "to": "2026-11-13",
-    "focus": "Note memory: Embedded Qdrant, create collection; Embeddings via Ollama; Chunk + ingest 20 real notes; `search_notes(query, k)`; Feed chunks into answers,",
-    "done": "Insert one vector and read it back"
+    "from": "2026-11-01",
+    "to": "2026-11-07",
+    "focus": "Note memory: Embedded Qdrant, create collection; Embeddings through Ollama; Chunk and ingest 20 real notes; search_notes(query, k); Feed chunks into answ",
+    "done": "One vector goes in and comes back"
   },
   {
     "w": 4,
-    "from": "2026-11-14",
-    "to": "2026-11-20",
-    "focus": "Measure and harden: 20-question eval set + script; Tune chunk size and k; `remember` with y/n confirm; Incremental ingest (hash files); Prompt-injection test; M",
+    "from": "2026-11-08",
+    "to": "2026-11-14",
+    "focus": "Measure and harden: 20 question test set and script; Tune chunk size and k; remember tool with y/n confirm; Incremental ingest (hash files); Prompt injection te",
     "done": "Prints hit@3"
   },
   {
     "w": 5,
-    "from": "2026-11-21",
-    "to": "2026-11-27",
-    "focus": "Voice: Push-to-talk recording to WAV; Whisper transcription; choose faster-whisper vs mlx-whisper by measuring; Voice into agent; Piper reply; Sent",
+    "from": "2026-11-15",
+    "to": "2026-11-21",
+    "focus": "Voice: Push-to-talk recording to WAV; Whisper transcription; pick faster-whisper or mlx-whisper by measuring; Voice into the agent; Piper reply; Sp",
     "done": "WAV plays back"
   },
   {
     "w": 6,
-    "from": "2026-11-28",
-    "to": "2026-12-04",
-    "focus": "Ship: Minimal React chat page (cuttable); Show tool calls + sources (cuttable); Diagram + README draft; Clean install from README in a fresh folde",
-    "done": "Streams a reply in browser"
+    "from": "2026-11-22",
+    "to": "2026-11-28",
+    "focus": "Ship: Minimal React chat page (cuttable); Show tool calls and sources (cuttable); Diagram and README draft; Clean install from the README in a new",
+    "done": "Streams a reply in the browser"
   }
 ];
 const DAYS = [
   {
     "n": 1,
     "date": "2026-10-24",
-    "task": "Setup: run `scripts/setup.sh`, confirm repo pushes to GitHub",
-    "done": "Model answers in terminal; `scripts/test.sh` passes",
+    "task": "Setup, chat, tools, notes sandbox, API (old days 1 to 6)",
+    "done": "DONE: 33 tests pass, API streams a correct answer",
     "w": 1
   },
   {
     "n": 2,
     "date": "2026-10-25",
-    "task": "Real-model chat check (history, `/reset`)",
-    "done": "It remembers your previous message",
-    "w": 1
-  },
-  {
-    "n": 3,
-    "date": "2026-10-26",
-    "task": "Config + logging + more tests",
-    "done": "Changing model needs no code edit",
-    "w": 1
-  },
-  {
-    "n": 4,
-    "date": "2026-10-27",
-    "task": "Tool calling with `get_time` on the real model",
-    "done": "Model calls `get_time` by itself",
-    "w": 1
-  },
-  {
-    "n": 5,
-    "date": "2026-10-28",
-    "task": "`list_notes`, `read_note` on real notes",
-    "done": "Test proves `../` blocked; model reads a note",
-    "w": 1
-  },
-  {
-    "n": 6,
-    "date": "2026-10-29",
-    "task": "API `/chat` streaming",
-    "done": "`curl -N` returns a streamed reply",
-    "w": 1
-  },
-  {
-    "n": 7,
-    "date": "2026-10-30",
-    "task": "Catch-up",
-    "done": "n/a",
-    "w": 1
-  },
-  {
-    "n": 8,
-    "date": "2026-10-31",
-    "task": "Read current MCP docs; hello server, 1 tool",
+    "task": "Read current MCP docs; hello server with 1 tool",
     "done": "Inspector lists and calls it",
     "w": 2
   },
   {
-    "n": 9,
-    "date": "2026-11-01",
+    "n": 3,
+    "date": "2026-10-26",
     "task": "Share tool functions between agent and MCP",
     "done": "Both call the same function",
     "w": 2
   },
   {
-    "n": 10,
-    "date": "2026-11-02",
-    "task": "Expose `list_notes`, `read_note`",
+    "n": 4,
+    "date": "2026-10-27",
+    "task": "Expose list_notes and read_note",
     "done": "Inspector reads a note",
     "w": 2
   },
   {
-    "n": 11,
-    "date": "2026-11-03",
+    "n": 5,
+    "date": "2026-10-28",
     "task": "Connect Claude Desktop",
     "done": "Claude Desktop lists your notes",
     "w": 2
   },
   {
-    "n": 12,
-    "date": "2026-11-04",
-    "task": "Validation, errors, timeouts",
-    "done": "Bad input returns clear error",
+    "n": 6,
+    "date": "2026-10-29",
+    "task": "Input checks, errors, timeouts",
+    "done": "Bad input gives a clear error",
     "w": 2
   },
   {
-    "n": 13,
-    "date": "2026-11-05",
-    "task": "MCP smoke test + pytest",
-    "done": "`scripts/test.sh` passes",
+    "n": 7,
+    "date": "2026-10-30",
+    "task": "MCP smoke test and pytest",
+    "done": "scripts/test.sh passes",
     "w": 2
   },
   {
-    "n": 14,
-    "date": "2026-11-06",
+    "n": 8,
+    "date": "2026-10-31",
     "task": "Catch-up",
     "done": "n/a",
     "w": 2
   },
   {
-    "n": 15,
-    "date": "2026-11-07",
+    "n": 9,
+    "date": "2026-11-01",
     "task": "Embedded Qdrant, create collection",
-    "done": "Insert one vector and read it back",
+    "done": "One vector goes in and comes back",
     "w": 3
   },
   {
-    "n": 16,
-    "date": "2026-11-08",
-    "task": "Embeddings via Ollama",
-    "done": "Vector size logged and constant",
+    "n": 10,
+    "date": "2026-11-02",
+    "task": "Embeddings through Ollama",
+    "done": "Vector size is logged and constant",
     "w": 3
   },
   {
-    "n": 17,
-    "date": "2026-11-09",
-    "task": "Chunk + ingest 20 real notes",
+    "n": 11,
+    "date": "2026-11-03",
+    "task": "Chunk and ingest 20 real notes",
     "done": "Count matches",
     "w": 3
   },
   {
-    "n": 18,
-    "date": "2026-11-10",
-    "task": "`search_notes(query, k)`",
-    "done": "5 hand-picked queries hit the right note",
+    "n": 12,
+    "date": "2026-11-04",
+    "task": "search_notes(query, k)",
+    "done": "5 test queries hit the right note",
     "w": 3
   },
   {
-    "n": 19,
-    "date": "2026-11-11",
+    "n": 13,
+    "date": "2026-11-05",
     "task": "Feed chunks into answers, cite filename",
     "done": "Answers from an old note and names it",
     "w": 3
   },
   {
-    "n": 20,
-    "date": "2026-11-12",
-    "task": "`search_notes` as agent + MCP tool",
+    "n": 14,
+    "date": "2026-11-06",
+    "task": "search_notes as agent and MCP tool",
     "done": "Claude Desktop searches notes",
     "w": 3
   },
   {
-    "n": 21,
-    "date": "2026-11-13",
+    "n": 15,
+    "date": "2026-11-07",
     "task": "Catch-up",
     "done": "n/a",
     "w": 3
   },
   {
-    "n": 22,
-    "date": "2026-11-14",
-    "task": "20-question eval set + script",
+    "n": 16,
+    "date": "2026-11-08",
+    "task": "20 question test set and script",
     "done": "Prints hit@3",
     "w": 4
   },
   {
-    "n": 23,
-    "date": "2026-11-15",
+    "n": 17,
+    "date": "2026-11-09",
     "task": "Tune chunk size and k",
-    "done": "Before/after table with real numbers",
+    "done": "Before and after table with real numbers",
     "w": 4
   },
   {
-    "n": 24,
-    "date": "2026-11-16",
-    "task": "`remember` with y/n confirm",
+    "n": 18,
+    "date": "2026-11-10",
+    "task": "remember tool with y/n confirm",
     "done": "Fact survives a restart",
     "w": 4
   },
   {
-    "n": 25,
-    "date": "2026-11-17",
+    "n": 19,
+    "date": "2026-11-11",
     "task": "Incremental ingest (hash files)",
     "done": "Second ingest embeds 0 new chunks",
     "w": 4
   },
   {
-    "n": 26,
-    "date": "2026-11-18",
-    "task": "Prompt-injection test",
-    "done": "Documented result, no unconfirmed write",
+    "n": 20,
+    "date": "2026-11-12",
+    "task": "Prompt injection test",
+    "done": "Result written down, no write without confirm",
     "w": 4
   },
   {
-    "n": 27,
-    "date": "2026-11-19",
-    "task": "Memory tests on temp store",
+    "n": 21,
+    "date": "2026-11-13",
+    "task": "Memory tests on a temp store",
     "done": "Tests never touch real data",
     "w": 4
   },
   {
-    "n": 28,
-    "date": "2026-11-20",
-    "task": "Catch-up + checkpoint",
+    "n": 22,
+    "date": "2026-11-14",
+    "task": "Catch-up and checkpoint",
     "done": "n/a",
     "w": 4
   },
   {
-    "n": 29,
-    "date": "2026-11-21",
+    "n": 23,
+    "date": "2026-11-15",
     "task": "Push-to-talk recording to WAV",
     "done": "WAV plays back",
     "w": 5
   },
   {
-    "n": 30,
-    "date": "2026-11-22",
-    "task": "Whisper transcription; choose faster-whisper vs mlx-whisper by measuring",
+    "n": 24,
+    "date": "2026-11-16",
+    "task": "Whisper transcription; pick faster-whisper or mlx-whisper by measuring",
     "done": "3 clips transcribed correctly",
     "w": 5
   },
   {
-    "n": 31,
-    "date": "2026-11-23",
-    "task": "Voice into agent",
+    "n": 25,
+    "date": "2026-11-17",
+    "task": "Voice into the agent",
     "done": "Spoken question gets a text answer",
     "w": 5
   },
   {
-    "n": 32,
-    "date": "2026-11-24",
+    "n": 26,
+    "date": "2026-11-18",
     "task": "Piper reply",
     "done": "Reply is spoken",
     "w": 5
   },
   {
-    "n": 33,
-    "date": "2026-11-25",
-    "task": "Sentence-by-sentence speech; measure time to first audio",
-    "done": "Number in README",
+    "n": 27,
+    "date": "2026-11-19",
+    "task": "Speak sentence by sentence; measure time to first audio",
+    "done": "Number is in the README",
     "w": 5
   },
   {
-    "n": 34,
-    "date": "2026-11-26",
+    "n": 28,
+    "date": "2026-11-20",
     "task": "SRT export (cuttable)",
     "done": "SRT plays in VLC",
     "w": 5
   },
   {
-    "n": 35,
-    "date": "2026-11-27",
+    "n": 29,
+    "date": "2026-11-21",
     "task": "Catch-up",
     "done": "n/a",
     "w": 5
   },
   {
-    "n": 36,
-    "date": "2026-11-28",
+    "n": 30,
+    "date": "2026-11-22",
     "task": "Minimal React chat page (cuttable)",
-    "done": "Streams a reply in browser",
+    "done": "Streams a reply in the browser",
     "w": 6
   },
   {
-    "n": 37,
-    "date": "2026-11-29",
-    "task": "Show tool calls + sources (cuttable)",
-    "done": "Source filename visible",
+    "n": 31,
+    "date": "2026-11-23",
+    "task": "Show tool calls and sources (cuttable)",
+    "done": "Source filename is visible",
     "w": 6
   },
   {
-    "n": 38,
-    "date": "2026-11-30",
-    "task": "Diagram + README draft",
-    "done": "Diagram renders on GitHub",
+    "n": 32,
+    "date": "2026-11-24",
+    "task": "Diagram and README draft",
+    "done": "Diagram shows on GitHub",
     "w": 6
   },
   {
-    "n": 39,
-    "date": "2026-12-01",
-    "task": "Clean install from README in a fresh folder",
-    "done": "Zero undocumented steps",
+    "n": 33,
+    "date": "2026-11-25",
+    "task": "Clean install from the README in a new folder",
+    "done": "No undocumented steps",
     "w": 6
   },
   {
-    "n": 40,
-    "date": "2026-12-02",
-    "task": "2-minute demo video",
+    "n": 34,
+    "date": "2026-11-26",
+    "task": "2 minute demo video",
     "done": "Recorded",
     "w": 6
   },
   {
-    "n": 41,
-    "date": "2026-12-03",
+    "n": 35,
+    "date": "2026-11-27",
     "task": "Someone else runs it from the README; tag v0.1",
-    "done": "They reach a working reply",
+    "done": "They get a working reply",
     "w": 6
   },
   {
-    "n": 42,
-    "date": "2026-12-04",
-    "task": "Buffer / deadline",
+    "n": 36,
+    "date": "2026-11-28",
+    "task": "Spare day",
     "done": "n/a",
     "w": 6
+  }
+];
+const LOG = [
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Set up the repo and local model. Chat, tools, notes sandbox and API work. 33 tests pass on the Mac",
+    "broke": "The 8B model wrote a tool call as text and guessed file names. Fixed in code",
+    "next": "Day 2: read MCP docs, build a hello server"
   }
 ];
 // ---- END DATA ----
@@ -435,7 +402,7 @@ $("#goal").textContent=GOAL;
 $("#rules").innerHTML=RULES.map(r=>`<li>${esc(r)}</li>`).join("");
 $("#plan").innerHTML="<tr><th>Week</th><th>Dates</th><th>Focus</th><th>Done when</th><th>Days logged</th></tr>"+
   PLAN.map(p=>{
-    const n=log.filter(e=>e.week==p.w).length;
+    const n=allEntries().filter(e=>e.week==p.w).length;
     return `<tr class="${weekOf(today())==p.w?"now":""}"><td>${p.w}</td><td>${p.from.slice(5)} – ${p.to.slice(5)}</td><td>${esc(p.focus)}</td><td>${esc(p.done)}</td><td>${n}</td></tr>`;
   }).join("");
 $("select[name=week]").innerHTML=PLAN.map(p=>`<option value="${p.w}">Week ${p.w}</option>`).join("");
@@ -443,22 +410,25 @@ $("input[name=date]").value=today();
 $("select[name=week]").value=weekOf(today())||1;
 $("input[name=date]").onchange=e=>{const w=weekOf(e.target.value);if(w)$("select[name=week]").value=w};
 
+function allEntries(){
+  return [...LOG.map(e=>({...e,week:e.week||weekOf(e.date),repo:true})), ...log.map((e,i)=>({...e,i}))];
+}
 function render(){
-  log.sort((a,b)=>b.date.localeCompare(a.date));
-  const hrs=log.reduce((s,e)=>s+(+e.hours||0),0);
-  $("#stats").innerHTML=`<div class="stat">Entries: <b>${log.length}</b></div><div class="stat">Hours: <b>${hrs}</b></div>`;
-  $("#log").innerHTML=log.length?log.map((e,i)=>`<div class="entry"><b>${esc(e.date)}</b> · Week ${esc(e.week)} · ${esc(e.hours)}h
+  const all=allEntries().sort((a,b)=>b.date.localeCompare(a.date));
+  const hrs=all.reduce((s,e)=>s+(+e.hours||0),0);
+  $("#stats").innerHTML=`<div class="stat">Entries: <b>${all.length}</b></div><div class="stat">Hours: <b>${hrs}</b></div>`;
+  $("#log").innerHTML=all.length?all.map(e=>`<div class="entry"><b>${esc(e.date)}</b> · Week ${esc(e.week)} · ${esc(e.hours)}h${e.repo?" · saved in repo":""}
     <div>${esc(e.did)}</div>
     ${e.check?`<div class="mut">Check: ${esc(e.check)}</div>`:""}
     ${e.broke?`<div class="mut">Broke: ${esc(e.broke)}</div>`:""}
     <div>Next session: ${esc(e.next)}</div>
-    <button class="alt" data-i="${i}">Delete</button></div>`).join(""):'<p class="mut">No entries yet. Notion export had no log data, so start fresh here.</p>';
+    ${e.repo?"":`<button class="alt" data-i="${e.i}">Delete</button>`}</div>`).join(""):'<p class="mut">No entries yet.</p>';
 }
 $("#log").onclick=e=>{const i=e.target.dataset.i;if(i!==undefined&&confirm("Delete this entry?")){log.splice(+i,1);save();render()}};
 $("#f").onsubmit=e=>{e.preventDefault();log.push(Object.fromEntries(new FormData(e.target)));save();e.target.reset();
   $("input[name=date]").value=today();$("input[name=hours]").value=1;$("select[name=week]").value=weekOf(today())||1;render();location.reload()};
 $("#sum").onclick=()=>{
-  const w=+$("select[name=week]").value, es=log.filter(e=>e.week==w), p=PLAN.find(x=>x.w==w);
+  const w=+$("select[name=week]").value, es=allEntries().filter(e=>e.week==w), p=PLAN.find(x=>x.w==w);
   $("#out").hidden=false;
   $("#out").textContent=[
     `Jarvis Week ${w} summary`,

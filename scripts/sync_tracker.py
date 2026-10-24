@@ -34,6 +34,15 @@ for w in weeks:
     w["done"] = next((d["done"] for d in ws if d["done"] != "n/a"), "")
     w["focus"] = w["focus"] + ": " + "; ".join(d["task"] for d in ws if d["task"] != "Catch-up")[:140]
 
+log_rows = []
+log_file = ROOT / "docs" / "LOG.md"
+if log_file.exists():
+    for line in log_file.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 5 and re.match(r"\d{4}-\d{2}-\d{2}$", cells[0]):
+            log_rows.append({"date": cells[0], "hours": cells[1] if cells[1].replace(".", "").isdigit() else "0",
+                             "did": cells[2], "broke": cells[3], "next": cells[4]})
+
 goal = ("Rebuild Jarvis from scratch: local Ollama assistant with tools, MCP server, Qdrant note memory, "
         "voice, README and demo. Deadline Fri Dec 4, 2026. Free and local only.")
 rules = [
@@ -48,6 +57,7 @@ block = (
     f"const RULES = {json.dumps(rules, indent=2)};\n"
     f"const PLAN = {json.dumps(weeks, indent=2, ensure_ascii=False)};\n"
     f"const DAYS = {json.dumps(days, indent=2, ensure_ascii=False)};\n"
+    f"const LOG = {json.dumps(log_rows, indent=2, ensure_ascii=False)};\n"
     "// ---- END DATA ----"
 )
 html = re.sub(r"// ---- EDIT THIS DATA IN CODE ----.*?// ---- END DATA ----", lambda m: block, html, flags=re.S)
