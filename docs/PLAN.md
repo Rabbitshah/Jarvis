@@ -12,7 +12,7 @@ End each day with `Next session: ___` and a `git push`.
 ## Week 2 (Oct 25-31): MCP
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 2 | Sun Oct 25 | Read current MCP docs; hello server with 1 tool | Inspector lists and calls it |
+| 2 | Sun Oct 25 | Read current MCP docs; hello server with 1 tool | DONE early (Oct 24): Inspector on the Mac lists and runs hello; SDK client test passes |
 | 3 | Mon Oct 26 | Share tool functions between agent and MCP | Both call the same function |
 | 4 | Tue Oct 27 | Expose list_notes and read_note | Inspector reads a note |
 | 5 | Wed Oct 28 | Connect Claude Desktop | Claude Desktop lists your notes |

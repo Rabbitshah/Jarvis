@@ -20,6 +20,7 @@ Read `CONTEXT.md` and `PRD.md` first. Build only what the current story asks.
 - Never read or write outside `notes/` from tools. Keep path checks in `tools/notes.py`.
 - Keep the API on `127.0.0.1`. No secrets in git. Do not commit `notes/*`, `models/ollama`, `.venv`, `.tools`.
 - Agent and MCP server must share the same tool functions (no copies).
+- MCP SDK is v2 (`mcp[cli]>=2,<3`): use `MCPServer` and `Client`. Many online examples show v1 `FastMCP`; they will not match.
 
 ## Commands
 | Task | Command |

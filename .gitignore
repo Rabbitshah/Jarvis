@@ -13,3 +13,4 @@ __pycache__/
 notes/*
 !notes/.gitkeep
 !notes/README.md
+.DS_Store

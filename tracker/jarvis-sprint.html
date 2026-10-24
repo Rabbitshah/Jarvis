@@ -93,7 +93,7 @@ const PLAN = [
     "from": "2026-10-25",
     "to": "2026-10-31",
     "focus": "MCP: Read current MCP docs; hello server with 1 tool; Share tool functions between agent and MCP; Expose list_notes and read_note; Connect Claude",
-    "done": "Inspector lists and calls it"
+    "done": "DONE early (Oct 24): Inspector on the Mac lists and runs hello; SDK client test passes"
   },
   {
     "w": 3,
@@ -136,7 +136,7 @@ const DAYS = [
     "n": 2,
     "date": "2026-10-25",
     "task": "Read current MCP docs; hello server with 1 tool",
-    "done": "Inspector lists and calls it",
+    "done": "DONE early (Oct 24): Inspector on the Mac lists and runs hello; SDK client test passes",
     "w": 2
   },
   {
@@ -385,6 +385,13 @@ const LOG = [
     "did": "Set up the repo and local model. Chat, tools, notes sandbox and API work. 33 tests pass on the Mac",
     "broke": "The 8B model wrote a tool call as text and guessed file names. Fixed in code",
     "next": "Day 2: read MCP docs, build a hello server"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Pushed to GitHub. Day 2 done early: read current MCP docs, hello MCP server, SDK client test. 35 tests pass. Inspector on the Mac runs hello",
+    "broke": "MCP SDK is now v2 (MCPServer, not FastMCP). My memory of the old API was wrong, so I checked the docs first",
+    "next": "Day 3: share tool functions between agent and MCP"
   }
 ];
 // ---- END DATA ----

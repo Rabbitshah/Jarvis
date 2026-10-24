@@ -50,7 +50,7 @@ The CLI and API call the same `Agent`. The MCP server (week 2) will import the s
 ## Planned additions
 | Week | Addition | Design note |
 | --- | --- | --- |
-| 2 | MCP server (stdio) | Imports `build_registry`. Exposes only `list_notes`, `read_note`, later `search_notes` |
+| 2 | MCP server (stdio, `mcp[cli]` 2.x `MCPServer`) | Imports `build_registry`. Exposes only `list_notes`, `read_note`, later `search_notes` |
 | 3 | Memory | Chunk markdown → Ollama embeddings → embedded Qdrant (`data/qdrant`). Payload: file, chunk id, hash |
 | 4 | Eval + `remember` | hit@3 script; writes need y/n confirmation |
 | 5 | Voice | push-to-talk → WAV → Whisper → agent; reply split by sentence → Piper |

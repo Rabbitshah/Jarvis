@@ -17,7 +17,7 @@
 | HTTP client | httpx (talks to Ollama REST directly, no LLM framework) |
 | Vector DB (week 3) | Qdrant in embedded local mode (`qdrant-client`, path under `data/`), no Docker needed. Verify API before use |
 | Speech (week 5) | faster-whisper or mlx-whisper (measure, then pick) + Piper TTS |
-| MCP (week 2) | official Python MCP SDK. Read current docs first |
+| MCP (week 2) | official Python SDK `mcp[cli]` 2.x. API is `from mcp.server import MCPServer` and `from mcp import Client`. Older `FastMCP` examples are v1: do not copy them |
 | Tests | pytest |
 | UI (cuttable) | React + Vite + Tailwind, chat page only |
 | Packaging | uv + pyproject.toml, `uv.lock` committed |
