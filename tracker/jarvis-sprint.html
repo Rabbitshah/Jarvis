@@ -192,14 +192,14 @@ const DAYS = [
     "n": 10,
     "date": "2026-11-02",
     "task": "Embeddings through Ollama",
-    "done": "Code done early (Oct 24), NOT yet verified with the real model: run scripts/doctor.sh on the Mac, it prints the vector size",
+    "done": "DONE early (Oct 24): doctor on the Mac prints vector size 768 (constant)",
     "w": 3
   },
   {
     "n": 11,
     "date": "2026-11-03",
     "task": "Chunk and ingest 20 real notes",
-    "done": "Count matches",
+    "done": "Code done early (Oct 24), 71 tests pass; dry run says 20 notes = 38 chunks. NOT yet run with the real model: bash scripts/ingest.sh must print MATCH",
     "w": 3
   },
   {
@@ -434,6 +434,13 @@ const LOG = [
     "did": "Week 3 started early. Day 9: verified embedded Qdrant API in the docs and probed it. Added memory/store.py (VectorStore). Day 10 code: OllamaClient.embed (/api/embed), setup.sh now pulls nomic-embed-text, doctor prints the vector size. 20 real notes now in notes/. 61 tests pass",
     "broke": "Embedded Qdrant locks its folder to one process, so the store opens per call, not at startup. Matters for Day 14 (agent + MCP at the same time). Not yet tested with the real embedding model",
     "next": "Pull the embedding model on the Mac, run doctor (Day 10 check), then Day 11: chunk and ingest the 20 notes"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 10 verified on the Mac (vector size 768, constant). Day 11 code: chunker (paragraphs kept whole, 800 chars max, headings stay with their text), ingest (full re-ingest, skips README.md and sample-*), `jarvis --ingest`, scripts/ingest.sh. 71 tests pass. Dry run: 20 real notes = 38 chunks",
+    "broke": "Heading-glue bug in the first chunker caught by a test, fixed. Several notes overlap (two Jarvis notes, two portfolio notes, projects vs per-project notes), so search may return near-duplicates",
+    "next": "Run scripts/ingest.sh on the Mac (expect 38 chunks, MATCH), then Day 12: search_notes with 5 test queries"
   }
 ];
 // ---- END DATA ----

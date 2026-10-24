@@ -6,7 +6,7 @@ import sys
 
 from .agent import Agent
 from .config import load_config
-from .llm import OllamaClient
+from .llm import LLMError, OllamaClient
 from .tools.builtin import build_registry
 
 
@@ -38,6 +38,25 @@ def doctor() -> int:
     print(f"notes folder     : {cfg.notes_dir} ({'ok' if cfg.notes_dir.is_dir() else 'missing'})")
     print(f"tools            : {', '.join(build_registry(cfg).names())}")
     return 0 if ok else 1
+
+
+def ingest_notes() -> int:
+    from .memory.ingest import ingest
+    from .memory.store import StoreError
+
+    cfg = load_config()
+    llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
+    try:
+        res = ingest(cfg, llm.embed)
+    except (LLMError, StoreError) as exc:
+        print(f"ingest failed: {exc}")
+        return 1
+    for name, n in res.files.items():
+        print(f"  {n:>2} chunks  {name}")
+    print(f"notes ingested   : {len(res.files)}  (skipped: {', '.join(res.skipped) or 'none'})")
+    print(f"chunks produced  : {res.chunks}")
+    print(f"chunks in index  : {res.stored_total}  ({'match' if res.stored_total == res.chunks else 'MISMATCH'})")
+    return 0 if res.stored_total == res.chunks else 1
 
 
 def chat_loop() -> int:
@@ -73,8 +92,9 @@ def chat_loop() -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(prog="jarvis")
     parser.add_argument("--doctor", action="store_true", help="check setup and exit")
+    parser.add_argument("--ingest", action="store_true", help="embed the notes into the index and exit")
     args = parser.parse_args()
-    sys.exit(doctor() if args.doctor else chat_loop())
+    sys.exit(doctor() if args.doctor else ingest_notes() if args.ingest else chat_loop())
 
 
 if __name__ == "__main__":

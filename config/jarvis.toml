@@ -19,6 +19,7 @@ If a tool returns an error, tell the user plainly. Keep answers short."""
 
 [paths]
 notes_dir = "notes"   # relative to the repo root
+ingest_exclude = ["README.md", "sample-*"]   # files that are not real notes
 index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to delete
 
 [api]

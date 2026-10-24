@@ -22,6 +22,7 @@ class Config:
     system_prompt: str
     notes_dir: Path
     index_dir: Path
+    ingest_exclude: tuple[str, ...]
     api_host: str
     api_port: int
 
@@ -50,6 +51,7 @@ def load_config(path: str | Path | None = None) -> Config:
         system_prompt=agent["system_prompt"].strip(),
         notes_dir=notes,
         index_dir=index,
+        ingest_exclude=tuple(paths.get("ingest_exclude", [])),
         api_host=api["host"],
         api_port=int(api["port"]),
     )
