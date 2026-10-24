@@ -19,6 +19,7 @@ If a tool returns an error, tell the user plainly. Keep answers short."""
 
 [paths]
 notes_dir = "notes"   # relative to the repo root
+index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to delete
 
 [api]
 host = "127.0.0.1"    # local only. Do not change without adding auth.

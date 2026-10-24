@@ -25,8 +25,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 9 | Sun Nov 1 | Embedded Qdrant, create collection | One vector goes in and comes back |
-| 10 | Mon Nov 2 | Embeddings through Ollama | Vector size is logged and constant |
+| 9 | Sun Nov 1 | Embedded Qdrant, create collection | DONE early (Oct 24): checked the docs and probed the API; VectorStore tests put a vector in and get it back, and survive a reopen |
+| 10 | Mon Nov 2 | Embeddings through Ollama | Code done early (Oct 24), NOT yet verified with the real model: run scripts/doctor.sh on the Mac, it prints the vector size |
 | 11 | Tue Nov 3 | Chunk and ingest 20 real notes | Count matches |
 | 12 | Wed Nov 4 | search_notes(query, k) | 5 test queries hit the right note |
 | 13 | Thu Nov 5 | Feed chunks into answers, cite filename | Answers from an old note and names it |

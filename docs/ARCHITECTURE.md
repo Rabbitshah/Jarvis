@@ -51,7 +51,7 @@ The CLI and API call the same `Agent`. The MCP server (`mcp_server.py`) register
 | Week | Addition | Design note |
 | --- | --- | --- |
 | 2 | MCP server (stdio, `mcp[cli]` 2.x `MCPServer`) | Imports `build_registry`. Exposes only `list_notes`, `read_note`, later `search_notes` |
-| 3 | Memory | Chunk markdown → Ollama embeddings → embedded Qdrant (`data/qdrant`). Payload: file, chunk id, hash |
+| 3 | Memory | Chunk markdown → Ollama embeddings → embedded Qdrant (`.tools/qdrant`, rebuildable). Payload: file, chunk id, hash |
 | 4 | Eval + `remember` | hit@3 script; writes need y/n confirmation |
 | 5 | Voice | push-to-talk → WAV → Whisper → agent; reply split by sentence → Piper |
 
@@ -60,7 +60,7 @@ The CLI and API call the same `Agent`. The MCP server (`mcp_server.py`) register
 | --- | --- |
 | Raw httpx to Ollama, no LLM framework | Fewer dependencies, easier to explain in interviews |
 | Own Ollama on port 11500 | Does not clash with a system Ollama; models stay in the repo |
-| Qdrant embedded mode instead of Docker | Docker is not installed; keeps everything in the repo. Verify API when building week 3 |
+| Qdrant embedded mode instead of Docker | Docker is not installed; keeps everything in the repo. API verified Oct 24 (qdrant-client 1.20). It locks its folder to one process, so the store opens per call |
 | SSE for streaming | Simple, works with `curl` and browsers |
 | Tests use a fake LLM | Fast, deterministic, no model needed in CI |
 

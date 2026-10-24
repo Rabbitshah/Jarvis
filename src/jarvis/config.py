@@ -21,6 +21,7 @@ class Config:
     tool_timeout_seconds: float
     system_prompt: str
     notes_dir: Path
+    index_dir: Path
     api_host: str
     api_port: int
 
@@ -34,6 +35,10 @@ def load_config(path: str | Path | None = None) -> Config:
     if not notes.is_absolute():
         notes = ROOT / notes
 
+    index = Path(os.environ.get("JARVIS_INDEX_DIR") or paths.get("index_dir", ".tools/qdrant"))
+    if not index.is_absolute():
+        index = ROOT / index
+
     return Config(
         ollama_url=os.environ.get("JARVIS_OLLAMA_URL") or llm["ollama_url"],
         model=os.environ.get("JARVIS_MODEL") or llm["model"],
@@ -44,6 +49,7 @@ def load_config(path: str | Path | None = None) -> Config:
         tool_timeout_seconds=float(agent.get("tool_timeout_seconds", 10)),
         system_prompt=agent["system_prompt"].strip(),
         notes_dir=notes,
+        index_dir=index,
         api_host=api["host"],
         api_port=int(api["port"]),
     )

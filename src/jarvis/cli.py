@@ -12,7 +12,7 @@ from .tools.builtin import build_registry
 
 def doctor() -> int:
     cfg = load_config()
-    llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds)
+    llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
     ok = True
     print(f"config model     : {cfg.model}")
     print(f"ollama url       : {cfg.ollama_url}")
@@ -21,6 +21,17 @@ def doctor() -> int:
         have = cfg.model in llm.list_models()
         print(f"model installed  : {'yes' if have else 'NO (run scripts/setup.sh)'}")
         ok &= have
+        installed = any(m == cfg.embed_model or m.startswith(cfg.embed_model + ":") for m in llm.list_models())
+        print(f"embed installed  : {'yes' if installed else f'NO (run: ollama pull {cfg.embed_model})'}")
+        ok &= installed
+        if installed:
+            try:
+                sizes = {len(v) for v in llm.embed(["hello", "a much longer second sentence", "hello"])}
+                print(f"vector size      : {', '.join(map(str, sizes))} ({'constant' if len(sizes) == 1 else 'NOT constant'})")
+                ok &= len(sizes) == 1
+            except Exception as exc:  # noqa: BLE001
+                print(f"vector size      : embedding failed ({exc})")
+                ok = False
     else:
         print("ollama           : NOT reachable (run scripts/run.sh)")
         ok = False
