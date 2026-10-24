@@ -157,7 +157,7 @@ const DAYS = [
     "n": 5,
     "date": "2026-10-28",
     "task": "Input checks, errors, timeouts",
-    "done": "Bad input gives a clear error",
+    "done": "DONE early (Oct 24): wrong or missing arguments give a clear error; slow tools time out at 10 s; 50 tests pass",
     "w": 2
   },
   {
@@ -413,6 +413,13 @@ const LOG = [
     "did": "Dropped the Claude Desktop step (Jarvis stays fully local) and removed its files. Moved CONTEXT.md and PRD.md into docs/. Kept caches out of the repo root",
     "broke": "Nothing",
     "next": "Day 5: input checks, errors, timeouts"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 5 done early: tools check missing, extra and wrong-type arguments. Slow tools time out after 10 s (agent and MCP share the same limit, set in config). read_note reads at most 20,000 characters from disk. Bad session_id is rejected. 50 tests pass",
+    "broke": "An old test expected the old error text; updated",
+    "next": "Day 6: MCP smoke test, README \"run MCP locally\" section"
   }
 ];
 // ---- END DATA ----

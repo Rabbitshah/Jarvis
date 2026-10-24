@@ -28,7 +28,7 @@ def build_registry(cfg: Config) -> Registry:
     def read_note(path: str) -> str:
         return notes.read_note(cfg.notes_dir, path)
 
-    reg = Registry()
+    reg = Registry(timeout=cfg.tool_timeout_seconds)
     reg.register(Tool(
         name="get_time",
         description="Get the current local date and time.",

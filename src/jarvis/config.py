@@ -18,6 +18,7 @@ class Config:
     timeout_seconds: float
     max_tool_rounds: int
     max_history: int
+    tool_timeout_seconds: float
     system_prompt: str
     notes_dir: Path
     api_host: str
@@ -40,6 +41,7 @@ def load_config(path: str | Path | None = None) -> Config:
         timeout_seconds=float(llm["timeout_seconds"]),
         max_tool_rounds=int(agent["max_tool_rounds"]),
         max_history=int(agent["max_history"]),
+        tool_timeout_seconds=float(agent.get("tool_timeout_seconds", 10)),
         system_prompt=agent["system_prompt"].strip(),
         notes_dir=notes,
         api_host=api["host"],

@@ -11,7 +11,7 @@ def test_unknown_tool(cfg):
 
 def test_bad_args_do_not_crash(cfg):
     out = build_registry(cfg).call("read_note", {"wrong": 1})
-    assert out.startswith("error: bad arguments")
+    assert out == "error: missing required argument 'path'"
 
 
 def test_string_args_parsed(cfg):

@@ -64,7 +64,8 @@ def read_note(root: Path, path: str) -> str:
     full = resolve_note(root, _expand_plain_name(root, path))
     if not full.is_file():
         raise ToolError("note not found. Call list_notes to see the exact names")
-    text = full.read_text(encoding="utf-8", errors="replace")
+    with full.open(encoding="utf-8", errors="replace") as handle:
+        text = handle.read(MAX_CHARS + 1)  # never load a huge file into memory
     if len(text) > MAX_CHARS:
         return text[:MAX_CHARS] + f"\n\n[truncated at {MAX_CHARS} characters]"
     return text

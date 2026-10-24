@@ -20,7 +20,7 @@ MAX_SESSIONS = 20
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
-    session_id: str = Field(default="default", max_length=64)
+    session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
 
 
 def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> FastAPI:
