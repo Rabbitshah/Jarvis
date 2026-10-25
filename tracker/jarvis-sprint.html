@@ -248,14 +248,14 @@ const DAYS = [
     "n": 18,
     "date": "2026-11-10",
     "task": "remember tool with y/n confirm",
-    "done": "Code done (Oct 25), 99 tests pass. NOT yet tried on the Mac: tell Jarvis to remember a fact, answer y, quit, restart, ask for it",
+    "done": "DONE early (Oct 25): on the Mac, remembered a fact with y, restarted, it was found; an n answer saved nothing",
     "w": 4
   },
   {
     "n": 19,
     "date": "2026-11-11",
     "task": "Incremental ingest (hash files)",
-    "done": "Second ingest embeds 0 new chunks",
+    "done": "Code done (Oct 25), 110 tests pass. NOT yet run on the Mac: bash scripts/ingest.sh twice; the second run must say embedded now: 0",
     "w": 4
   },
   {
@@ -483,6 +483,13 @@ const LOG = [
     "did": "Day 17 verified on the Mac after re-ingest (72 chunks): top-1 16/20 -> 18/20, hit@3 19/20 -> 20/20, MRR 0.875 -> 0.950. Right-note scores now >= 0.521 and off-topic <= 0.494, so min_score is 0.51. Day 18 code: `remember` tool only PROPOSES a fact. Saving needs your typed y in the terminal (or API /confirm), then it appends a dated line to notes/memory.md and re-indexes. A model or a note cannot save anything alone. MCP server does not get this tool. 99 tests pass",
     "broke": "The gap between right and off-topic scores is only 0.027, so 0.51 is thin. Design choice made without asking you: facts live in notes/memory.md (a plain file you can edit; the index can be rebuilt from it)",
     "next": "On the Mac: scripts/test.sh, then scripts/run.sh: say \"remember that I play pickleball on weekends\", answer y, /exit, run again, ask \"what do I play on weekends?\""
+  },
+  {
+    "date": "2026-10-25",
+    "hours": "0",
+    "did": "Day 18 verified on the Mac: \"remember\" showed the y/N prompt, y saved to memory.md, after a restart the fact was found, n saved nothing. Day 19 code: notes are hashed together with the embedding settings; only changed notes are embedded, deleted notes leave the index, `--full` forces everything (bash scripts/ingest.sh --full). Saving a memory now embeds only memory.md. Number arguments sent as strings (\"10\") are now accepted. 110 tests pass",
+    "broke": "In your chat the model sent k as the string \"10\" (it was rejected until now). It also cited 10-gre-and-lifestyle.md for a fact that came from memory.md: the \"(source: ...)\" line is the model guessing, not a check. Saved fact reads \"You play pickleball...\" (second person)",
+    "next": "Run scripts/ingest.sh twice on the Mac. The first run embeds everything once (old index has no hashes); the second must show embedded now: 0"
   }
 ];
 // ---- END DATA ----

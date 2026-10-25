@@ -42,20 +42,22 @@ def doctor() -> int:
     return 0 if ok else 1
 
 
-def ingest_notes() -> int:
+def ingest_notes(full: bool = False) -> int:
     from .memory.ingest import ingest
     from .memory.store import StoreError
 
     cfg = load_config()
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
     try:
-        res = ingest(cfg, llm.embed)
+        res = ingest(cfg, llm.embed, full=full)
     except (LLMError, StoreError) as exc:
         print(f"ingest failed: {exc}")
         return 1
     for name, n in res.files.items():
         print(f"  {n:>2} chunks  {name}")
     print(f"notes ingested   : {len(res.files)}  (skipped: {', '.join(res.skipped) or 'none'})")
+    print(f"embedded now     : {res.embedded} chunks  (unchanged notes: {len(res.unchanged)}, "
+          f"removed from index: {', '.join(res.removed) or 'none'})")
     print(f"chunks produced  : {res.chunks}")
     print(f"chunks in index  : {res.stored_total}  ({'match' if res.stored_total == res.chunks else 'MISMATCH'})")
     return 0 if res.stored_total == res.chunks else 1
@@ -125,13 +127,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="jarvis")
     parser.add_argument("--doctor", action="store_true", help="check setup and exit")
     parser.add_argument("--ingest", action="store_true", help="embed the notes into the index and exit")
+    parser.add_argument("--full", action="store_true", help="with --ingest: embed every note again")
     parser.add_argument("--search", metavar="QUERY", help="search the note index and exit")
     parser.add_argument("-k", type=int, default=3, help="how many results for --search")
     args = parser.parse_args()
     if args.doctor:
         sys.exit(doctor())
     if args.ingest:
-        sys.exit(ingest_notes())
+        sys.exit(ingest_notes(args.full))
     if args.search is not None:
         sys.exit(search_cmd(args.search, args.k))
     sys.exit(chat_loop())

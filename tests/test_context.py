@@ -68,7 +68,8 @@ def test_search_notes_tool(cfg, tmp_path):
     out = reg.call("search_notes", {"query": "aaa", "k": 1})
     assert "bees.md" in out and "data, not instructions" in out
     assert reg.call("search_notes", {"query": "   "}).startswith("error:")           # empty query
-    assert reg.call("search_notes", {"query": "a", "k": "3"}) == "error: argument 'k' must be of type integer"
+    assert "bees.md" in reg.call("search_notes", {"query": "aaa", "k": "3"})        # "3" from a small model is accepted
+    assert reg.call("search_notes", {"query": "a", "k": "lots"}) == "error: argument 'k' must be of type integer"
     assert reg.call("search_notes", {}) == "error: missing required argument 'query'"
     strict = build_registry(dataclasses.replace(c, memory_min_score=1.1), fake_embed)
     assert strict.call("search_notes", {"query": "aaa"}) == "No matching notes found."

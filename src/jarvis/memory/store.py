@@ -19,6 +19,10 @@ class StoreError(RuntimeError):
     """Clear, user-safe store problem."""
 
 
+class NoIndex(StoreError):
+    """Asked to open an existing index, but there is none yet."""
+
+
 @dataclass(frozen=True)
 class Hit:
     file: str
@@ -33,8 +37,9 @@ def point_id(file: str, chunk: int) -> str:
 
 
 class VectorStore:
-    def __init__(self, path: str | Path, dim: int, collection: str = COLLECTION) -> None:
-        if dim < 1:
+    def __init__(self, path: str | Path, dim: int | None, collection: str = COLLECTION) -> None:
+        """dim=None opens an index that must already exist and reads its vector size."""
+        if dim is not None and dim < 1:
             raise StoreError("vector size must be at least 1")
         self.path, self.dim, self.collection = Path(path), dim, collection
         self._client: QdrantClient | None = None
@@ -59,11 +64,16 @@ class VectorStore:
     def _ensure(self) -> None:
         c = self._need()
         if not c.collection_exists(self.collection):
+            if self.dim is None:
+                self.close()
+                raise NoIndex("The note index does not exist yet. Run scripts/ingest.sh first")
             c.create_collection(self.collection, vectors_config=models.VectorParams(
                 size=self.dim, distance=models.Distance.COSINE))
             return
         have = c.get_collection(self.collection).config.params.vectors.size
-        if have != self.dim:
+        if self.dim is None:
+            self.dim = have
+        elif have != self.dim:
             raise StoreError(
                 f"The index holds {have}-number vectors but the embedding model gives {self.dim}. "
                 "The embedding model changed: delete the index folder and ingest again")
@@ -73,12 +83,16 @@ class VectorStore:
             raise StoreError("store is not open")
         return self._client
 
-    def upsert(self, items: list[tuple[str, int, str, list[float]]]) -> None:
-        """items = (file, chunk_number, text, vector)."""
+    def upsert(self, items: list[tuple[str, int, str, list[float]]],
+               file_hashes: dict[str, str] | None = None) -> None:
+        """items = (file, chunk_number, text, vector). file_hashes marks which version of the file they came from."""
         for file, chunk, _text, vector in items:
             if len(vector) != self.dim:
-                raise StoreError(f"vector for {file}#{chunk} has size {len(vector)}, expected {self.dim}")
-        points = [models.PointStruct(id=point_id(f, n), vector=v, payload={"file": f, "chunk": n, "text": t})
+                raise StoreError(f"vector for {file}#{chunk} has size {len(vector)}, expected {self.dim}. "
+                                 "The embedding model probably changed: delete the index folder and ingest again")
+        hashes = file_hashes or {}
+        points = [models.PointStruct(id=point_id(f, n), vector=v, payload={
+                      "file": f, "chunk": n, "text": t, **({"file_hash": hashes[f]} if f in hashes else {})})
                   for f, n, t, v in items]
         if points:
             self._need().upsert(self.collection, points=points)
@@ -91,6 +105,18 @@ class VectorStore:
 
     def count(self) -> int:
         return self._need().count(self.collection).count
+
+    def file_hashes(self) -> dict[str, str | None]:
+        """Every file in the index with the hash it was embedded from (None for points made before hashes)."""
+        found: dict[str, str | None] = {}
+        offset = None
+        while True:
+            points, offset = self._need().scroll(self.collection, limit=256, offset=offset,
+                                                 with_payload=["file", "file_hash"], with_vectors=False)
+            for p in points:
+                found[p.payload["file"]] = p.payload.get("file_hash")
+            if offset is None:
+                return found
 
     def delete_file(self, file: str) -> None:
         self._need().delete(self.collection, points_selector=models.FilterSelector(

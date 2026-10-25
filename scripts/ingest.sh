@@ -4,4 +4,4 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 cd "$ROOT"
 bash scripts/ollama-up.sh
-exec uv run jarvis --ingest
+exec uv run jarvis --ingest "$@"   # add --full to embed every note again
