@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Callable
 
 from ..config import Config
+from ..tools.notes import is_private
 from .store import Hit, StoreError, VectorStore
 
 MAX_QUERY_CHARS = 500
@@ -24,4 +25,5 @@ def search_notes(cfg: Config, embed: Embed, query: str, k: int = 3) -> list[Hit]
     with VectorStore(cfg.index_dir, len(vector)) as store:
         if store.count() == 0:
             raise StoreError("The note index is empty. Run scripts/ingest.sh first")
-        return store.search(vector, k)
+        hits = store.search(vector, k + 5)  # a few extra, in case stale private hits are dropped below
+    return [h for h in hits if not is_private(h.file, cfg.private_notes)][:k]

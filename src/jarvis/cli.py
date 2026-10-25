@@ -102,12 +102,12 @@ def chat_loop() -> int:
             print("history cleared")
             continue
         print("jarvis> ", end="", flush=True)
-        asked = []
+        asked, consulted = [], []
         for ev in agent.chat(text):
             if ev["type"] == "token":
                 print(ev["text"], end="", flush=True)
             elif ev["type"] == "sources":
-                print(f"\n  [notes shown to the model] {', '.join(ev['files'])}\njarvis> ", end="", flush=True)
+                consulted = ev["files"]
             elif ev["type"] == "tool_call":
                 print(f"\n  [tool] {ev['name']}({ev['args']})\njarvis> ", end="", flush=True)
             elif ev["type"] == "confirm":
@@ -115,6 +115,8 @@ def chat_loop() -> int:
             elif ev["type"] == "error":
                 print(f"\n  [error] {ev['message']}")
         print()
+        if consulted:
+            print(f"  Notes consulted: {', '.join(consulted)}")
         for ev in asked:  # only a typed "y" from you saves anything
             if ev.get("from_context"):
                 print("  ! Notes were shown to the model this turn. Save only if this fact really came from you.")

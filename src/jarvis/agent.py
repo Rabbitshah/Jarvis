@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable, Iterator, Protocol
 
 from .llm import LLMError
@@ -51,8 +52,7 @@ class Agent:
         self._trim()
         turn = len(self.messages) - 1  # index of this turn's user message
         ctx = self.context_fn(user_text) if self.context_fn else None
-        if ctx:
-            yield {"type": "sources", "files": ctx.files}
+        cited: list[str] = list(ctx.files) if ctx else []  # notes that reached the model this turn
         try:
             for _ in range(self.max_rounds):
                 content, calls, held = "", [], False
@@ -81,6 +81,8 @@ class Agent:
                     assistant["tool_calls"] = calls
                 self.messages.append(assistant)
                 if not calls:
+                    if cited:  # the program, not the model, says which notes were consulted
+                        yield {"type": "sources", "files": cited}
                     yield {"type": "done"}
                     return
 
@@ -91,6 +93,10 @@ class Agent:
                     result = self.registry.call(name, args)
                     self.messages.append({"role": "tool", "tool_name": name, "content": result})
                     yield {"type": "tool_result", "name": name, "result": result}
+                    if name == "search_notes" and result.startswith("Note excerpts"):
+                        for f in re.findall(r"^\d+\. (.+?) \(match", result, re.MULTILINE):
+                            if f not in cited:
+                                cited.append(f)
                     if self.proposals:
                         for p in self.proposals.take_new():
                             yield {"type": "confirm", "id": p.id, "fact": p.fact, "from_context": bool(ctx)}

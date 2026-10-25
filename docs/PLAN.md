@@ -41,8 +41,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 18 | Tue Nov 10 | remember tool with y/n confirm | DONE early (Oct 25): on the Mac, remembered a fact with y, restarted, it was found; an n answer saved nothing |
 | 19 | Wed Nov 11 | Incremental ingest (hash files) | DONE early (Oct 25): on the Mac the first run embedded 73 chunks, the second run embedded 0 (21 notes unchanged) |
 | 20 | Thu Nov 12 | Prompt injection test | DONE early (Oct 25), result in docs/INJECTION.md: 1 of 15 valid trials manipulated (read-secret: the model read the secret note because a note told it to; it did not paste it). 0 writes without approval |
-| 21 | Fri Nov 13 | Memory tests on a temp store | Code done (Oct 25), 119 tests pass. A guard fails the run if a test changes your real notes or real index; proved it fails on a bad test. NOT yet run on the Mac: bash scripts/test.sh |
-| 22 | Sat Nov 14 | Catch-up and checkpoint | n/a |
+| 21 | Fri Nov 13 | Memory tests on a temp store | DONE early (Oct 25): the guard passes on the Mac (all tests passed) and fails on a deliberately bad test |
+| 22 | Sat Nov 14 | Checkpoint and cleanup | Code done (Oct 25), 126 tests pass: private notes list, sources added by code, MIT LICENSE, README with real numbers, scripts/clean-clone-test.sh. STILL TO DO on the Mac: push, run the clean-clone test, fix the voice line in notes/06-jarvis-project.md (Piper only), re-ingest, re-run injection-test.sh --trials 10 |
 
 ## Week 5 (Nov 15-21): Voice
 | Day | Date | Task | Done when |
@@ -52,8 +52,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 25 | Tue Nov 17 | Voice into the agent | Spoken question gets a text answer |
 | 26 | Wed Nov 18 | Piper reply | Reply is spoken |
 | 27 | Thu Nov 19 | Speak sentence by sentence; measure time to first audio | Number is in the README |
-| 28 | Fri Nov 20 | SRT export (cuttable) | SRT plays in VLC |
-| 29 | Sat Nov 21 | Catch-up | n/a |
+| 28 | Fri Nov 20 | Wake word (openwakeword, check the "hey jarvis" model exists first) starts the same recording; push-to-talk stays | Saying the phrase starts listening |
+| 29 | Sat Nov 21 | Catch-up. SRT export only if time is left (cuttable) | n/a |
 
 ## Week 6 (Nov 22-28): Ship
 | Day | Date | Task | Done when |

@@ -13,13 +13,16 @@ max_tool_rounds = 4
 max_history = 40
 tool_timeout_seconds = 10   # a stuck tool returns an error after this long
 system_prompt = """You are Jarvis, a concise personal assistant running fully on the user's own machine.
-Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts, naming the file. Use remember only when the user explicitly asks you to remember something; it needs their approval, so never say it is saved. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
+Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts. Do not write sources yourself; the program adds them. Use remember only when the user explicitly asks you to remember something; it needs their approval, so never say it is saved. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
 Trust tool results and answer directly from them; do not ask the user for information a tool already gave.
 If a tool returns an error, tell the user plainly. Keep answers short."""
 
 [paths]
 notes_dir = "notes"   # relative to the repo root
 ingest_exclude = ["README.md", "sample-*"]   # files that are not real notes
+# Notes the model can NEVER see: not listed, not readable, not searched, not indexed. Patterns match the
+# path inside notes/, lower-case. Put sensitive notes in notes/private/ or add your own patterns.
+private_notes = ["private/*", "*password*", "*salary*"]
 index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to delete
 
 [memory]

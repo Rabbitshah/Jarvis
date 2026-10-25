@@ -32,10 +32,10 @@ def build_registry(cfg: Config, embed: Callable[[list[str]], list[list[float]]] 
         return _now_text()
 
     def list_notes() -> str:
-        return notes.list_notes(cfg.notes_dir)
+        return notes.list_notes(cfg.notes_dir, cfg.private_notes)
 
     def read_note(path: str) -> str:
-        return notes.read_note(cfg.notes_dir, path)
+        return notes.read_note(cfg.notes_dir, path, cfg.private_notes)
 
     def search_notes(query: str, k: int = 3) -> str:
         try:

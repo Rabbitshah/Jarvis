@@ -1,6 +1,7 @@
 """Sandboxed access to the notes folder. Nothing outside it is ever readable."""
 from __future__ import annotations
 
+import fnmatch
 from pathlib import Path
 
 from .registry import ToolError
@@ -25,7 +26,13 @@ def resolve_note(root: Path, rel: str) -> Path:
     return full
 
 
-def _note_files(root: Path) -> list[str]:
+def is_private(rel: str, patterns: tuple[str, ...]) -> bool:
+    """True if a note matches a private pattern. Matching is on the lower-case path inside notes/."""
+    low = rel.replace("\\", "/").lower()
+    return any(fnmatch.fnmatchcase(low, pat.lower()) for pat in patterns)
+
+
+def _note_files(root: Path, private: tuple[str, ...] = ()) -> list[str]:
     root_resolved = root.resolve()
     if not root_resolved.is_dir():
         raise ToolError("notes folder does not exist")
@@ -34,25 +41,25 @@ def _note_files(root: Path) -> list[str]:
         for p in root_resolved.rglob("*")
         if p.is_file() and p.suffix.lower() in ALLOWED_SUFFIXES and p.resolve().is_relative_to(root_resolved)
     ]
-    return sorted(found)
+    return sorted(f for f in found if not is_private(f, private))
 
 
-def list_notes(root: Path) -> str:
-    found = _note_files(root)
+def list_notes(root: Path, private: tuple[str, ...] = ()) -> str:
+    found = _note_files(root, private)
     if not found:
         return "no notes found"
     extra = f"\n(+{len(found) - MAX_LIST} more not shown)" if len(found) > MAX_LIST else ""
     return "\n".join(found[:MAX_LIST]) + extra
 
 
-def _expand_plain_name(root: Path, path: str) -> str:
+def _expand_plain_name(root: Path, path: str, private: tuple[str, ...] = ()) -> str:
     """'Falcon' or 'Falcon.txt' -> the one note whose name contains it. Plain names only."""
     if not isinstance(path, str) or not path.strip() or path != Path(path).name or path in (".", ".."):
         return path
     if (root / path).is_file() and Path(path).suffix.lower() in ALLOWED_SUFFIXES:
         return path
     query = Path(path).stem.lower()
-    matches = [n for n in _note_files(root) if query and query in Path(n).stem.lower()]
+    matches = [n for n in _note_files(root, private) if query and query in Path(n).stem.lower()]
     if len(matches) == 1:
         return matches[0]
     if len(matches) > 1:
@@ -60,9 +67,10 @@ def _expand_plain_name(root: Path, path: str) -> str:
     return path
 
 
-def read_note(root: Path, path: str) -> str:
-    full = resolve_note(root, _expand_plain_name(root, path))
-    if not full.is_file():
+def read_note(root: Path, path: str, private: tuple[str, ...] = ()) -> str:
+    full = resolve_note(root, _expand_plain_name(root, path, private))
+    # a private note answers exactly like a missing one, so its existence is not revealed
+    if not full.is_file() or is_private(str(full.relative_to(root.resolve())), private):
         raise ToolError("note not found. Call list_notes to see the exact names")
     with full.open(encoding="utf-8", errors="replace") as handle:
         text = handle.read(MAX_CHARS + 1)  # never load a huge file into memory

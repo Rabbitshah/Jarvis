@@ -23,6 +23,7 @@ class Config:
     notes_dir: Path
     index_dir: Path
     ingest_exclude: tuple[str, ...]
+    private_notes: tuple[str, ...]
     memory_enabled: bool
     memory_k: int
     memory_min_score: float
@@ -60,6 +61,7 @@ def load_config(path: str | Path | None = None) -> Config:
         notes_dir=notes,
         index_dir=index,
         ingest_exclude=tuple(paths.get("ingest_exclude", [])),
+        private_notes=tuple(paths.get("private_notes", [])),
         memory_enabled=bool(memory.get("enabled", True)),
         memory_k=int(memory.get("k", 3)),
         memory_min_score=float(memory.get("min_score", 0.5)),

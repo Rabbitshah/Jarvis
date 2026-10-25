@@ -31,7 +31,7 @@ def test_excerpts_reach_the_model_but_not_the_history(cfg):
     sent = llm.calls[0][-1]["content"]
     assert "Ship by December" in sent and sent.endswith("Question: when do I ship?")
     assert agent.messages[1] == {"role": "user", "content": "when do I ship?"}  # plain in history
-    assert events[0] == {"type": "sources", "files": ["idea.md"]}
+    assert events[-2] == {"type": "sources", "files": ["idea.md"]}   # code adds the sources, right before done
     assert events[-1]["type"] == "done"
 
 

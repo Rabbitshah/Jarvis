@@ -54,7 +54,7 @@ def ingest(cfg: Config, embed: Embed, max_chars: int | None = None, full: bool =
     max_chars = max_chars or cfg.memory_chunk_chars
     result = IngestResult()
     plan: dict[str, tuple[list[str], str]] = {}  # name -> (chunks, digest)
-    for name in _note_files(cfg.notes_dir):
+    for name in _note_files(cfg.notes_dir, cfg.private_notes):  # private notes are never indexed
         if _skip(name, cfg.ingest_exclude):
             result.skipped.append(name)
             continue
