@@ -241,14 +241,14 @@ const DAYS = [
     "n": 17,
     "date": "2026-11-09",
     "task": "Tune chunk size and k",
-    "done": "Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. STILL TO DO: re-ingest and re-run search-eval to confirm the real \"after\" and re-check min_score",
+    "done": "Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. Verified on the Mac after re-ingest (72 chunks): top-1 16/20 -> 18/20, hit@3 19/20 -> 20/20, MRR 0.875 -> 0.950. min_score set to 0.51",
     "w": 4
   },
   {
     "n": 18,
     "date": "2026-11-10",
     "task": "remember tool with y/n confirm",
-    "done": "Fact survives a restart",
+    "done": "Code done (Oct 25), 99 tests pass. NOT yet tried on the Mac: tell Jarvis to remember a fact, answer y, quit, restart, ask for it",
     "w": 4
   },
   {
@@ -476,6 +476,13 @@ const LOG = [
     "did": "Day 17 tuning run on the Mac (12 variants). Smaller chunks win in every comparison: 400 chars MRR 0.935-0.975, 800 chars 0.867-0.897, 1200 chars 0.756-0.871. Current config (800, header, no prefix) scored top-1 16/20, MRR 0.885. Header on/off and task prefix on/off moved results by 1 question or less at 400, so they are noise and unchanged. Config chunk_chars set to 400",
     "broke": "Smaller chunks give 72 chunks instead of 38 and shorter excerpts; the test only checks that the right note is found, not that the excerpt holds the whole answer. Score scale also shifts with chunk size, so min_score 0.5 may now be wrong",
     "next": "Run scripts/ingest.sh (expect 72 chunks), then scripts/search-eval.sh and paste it: that is the real \"after\" and sets min_score"
+  },
+  {
+    "date": "2026-10-25",
+    "hours": "0",
+    "did": "Day 17 verified on the Mac after re-ingest (72 chunks): top-1 16/20 -> 18/20, hit@3 19/20 -> 20/20, MRR 0.875 -> 0.950. Right-note scores now >= 0.521 and off-topic <= 0.494, so min_score is 0.51. Day 18 code: `remember` tool only PROPOSES a fact. Saving needs your typed y in the terminal (or API /confirm), then it appends a dated line to notes/memory.md and re-indexes. A model or a note cannot save anything alone. MCP server does not get this tool. 99 tests pass",
+    "broke": "The gap between right and off-topic scores is only 0.027, so 0.51 is thin. Design choice made without asking you: facts live in notes/memory.md (a plain file you can edit; the index can be rebuilt from it)",
+    "next": "On the Mac: scripts/test.sh, then scripts/run.sh: say \"remember that I play pickleball on weekends\", answer y, /exit, run again, ask \"what do I play on weekends?\""
   }
 ];
 // ---- END DATA ----

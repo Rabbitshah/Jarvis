@@ -8,6 +8,7 @@ from .agent import Agent
 from .config import load_config
 from .llm import LLMError, OllamaClient
 from .memory.context import make_context_fn
+from .memory.remember import Proposals
 from .tools.builtin import build_registry
 
 
@@ -80,8 +81,9 @@ def search_cmd(query: str, k: int) -> int:
 def chat_loop() -> int:
     cfg = load_config()
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
-    agent = Agent(llm, build_registry(cfg), cfg.system_prompt, cfg.max_tool_rounds, cfg.max_history,
-                  make_context_fn(cfg, llm.embed))
+    proposals = Proposals(cfg, llm.embed)
+    agent = Agent(llm, build_registry(cfg, llm.embed, proposals), cfg.system_prompt, cfg.max_tool_rounds,
+                  cfg.max_history, make_context_fn(cfg, llm.embed), proposals)
     print(f"Jarvis ({cfg.model}). /reset clears memory, /exit quits.")
     while True:
         try:
@@ -98,6 +100,7 @@ def chat_loop() -> int:
             print("history cleared")
             continue
         print("jarvis> ", end="", flush=True)
+        asked = []
         for ev in agent.chat(text):
             if ev["type"] == "token":
                 print(ev["text"], end="", flush=True)
@@ -105,9 +108,17 @@ def chat_loop() -> int:
                 print(f"\n  [notes shown to the model] {', '.join(ev['files'])}\njarvis> ", end="", flush=True)
             elif ev["type"] == "tool_call":
                 print(f"\n  [tool] {ev['name']}({ev['args']})\njarvis> ", end="", flush=True)
+            elif ev["type"] == "confirm":
+                asked.append(ev)
             elif ev["type"] == "error":
                 print(f"\n  [error] {ev['message']}")
         print()
+        for ev in asked:  # only a typed "y" from you saves anything
+            try:
+                answer = input(f"  Save to memory? \"{ev['fact']}\"  [y/N] ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                answer = "n"
+            print("  " + (proposals.approve(ev["id"]) if answer in ("y", "yes") else proposals.reject(ev["id"])))
 
 
 def main() -> None:

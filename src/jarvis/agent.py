@@ -15,13 +15,14 @@ class ChatClient(Protocol):
 class Agent:
     def __init__(self, llm: ChatClient, registry: Registry, system_prompt: str,
                  max_rounds: int = 4, max_history: int = 40,
-                 context_fn: Callable[[str], Any] | None = None) -> None:
+                 context_fn: Callable[[str], Any] | None = None, proposals: Any = None) -> None:
         self.llm = llm
         self.registry = registry
         self.system_prompt = system_prompt
         self.max_rounds = max_rounds
         self.max_history = max_history
         self.context_fn = context_fn
+        self.proposals = proposals  # facts waiting for the user's y/n
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
 
     def reset(self) -> None:
@@ -90,6 +91,9 @@ class Agent:
                     result = self.registry.call(name, args)
                     self.messages.append({"role": "tool", "tool_name": name, "content": result})
                     yield {"type": "tool_result", "name": name, "result": result}
+                    if self.proposals:
+                        for p in self.proposals.take_new():
+                            yield {"type": "confirm", "id": p.id, "fact": p.fact}
             yield {"type": "error", "message": "tool loop limit reached"}
         except LLMError as exc:
             yield {"type": "error", "message": str(exc)}

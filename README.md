@@ -31,6 +31,7 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | MCP server (same tools as the agent, over stdio) | built, unit-tested, smoke script |
 | Input checks + 10 s tool timeout | built, unit-tested |
 | Note memory: ingest, search by meaning, excerpts in answers (embedded Qdrant) | built, unit-tested; run `scripts/ingest.sh` after adding notes |
+| `remember`: Jarvis proposes a fact, you type y/N, it is saved to `notes/memory.md` and indexed (terminal and API `/confirm`; not in the MCP server) | built, unit-tested |
 | Voice, web UI | planned, see `docs/PLAN.md` |
 
 ## Run the MCP server locally

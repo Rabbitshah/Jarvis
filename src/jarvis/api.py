@@ -6,7 +6,7 @@ from collections import OrderedDict
 from typing import Iterator
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -14,9 +14,16 @@ from .agent import Agent, ChatClient
 from .config import Config, load_config
 from .llm import OllamaClient
 from .memory.context import make_context_fn
+from .memory.remember import Proposals
 from .tools.builtin import build_registry
 
 MAX_SESSIONS = 20
+
+
+class ConfirmRequest(BaseModel):
+    session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
+    id: str = Field(min_length=1, max_length=32)
+    approve: bool
 
 
 class ChatRequest(BaseModel):
@@ -36,8 +43,10 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
         if session_id in sessions:
             sessions.move_to_end(session_id)
         else:
-            sessions[session_id] = Agent(client, registry, cfg.system_prompt,
-                                         cfg.max_tool_rounds, cfg.max_history, context_fn)
+            proposals = Proposals(cfg, getattr(client, "embed", None))
+            session_registry = build_registry(cfg, getattr(client, "embed", None), proposals)
+            sessions[session_id] = Agent(client, session_registry, cfg.system_prompt,
+                                         cfg.max_tool_rounds, cfg.max_history, context_fn, proposals)
             while len(sessions) > MAX_SESSIONS:
                 sessions.popitem(last=False)
         return sessions[session_id]
@@ -56,6 +65,14 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
                 yield f"data: {json.dumps(ev)}\n\n"
 
         return StreamingResponse(events(), media_type="text/event-stream")
+
+    @app.post("/confirm")
+    def confirm(req: ConfirmRequest) -> dict:
+        agent = sessions.get(req.session_id)
+        if agent is None or agent.proposals is None:
+            raise HTTPException(status_code=404, detail="unknown session")
+        msg = agent.proposals.approve(req.id) if req.approve else agent.proposals.reject(req.id)
+        return {"message": msg}
 
     return app
 

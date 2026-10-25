@@ -37,8 +37,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
 | 16 | Sun Nov 8 | 20 question test set and script | DONE early (Oct 24): 20 cases; baseline on the Mac: top-1 16/20, hit@3 19/20, MRR 0.875 |
-| 17 | Mon Nov 9 | Tune chunk size and k | Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. STILL TO DO: re-ingest and re-run search-eval to confirm the real "after" and re-check min_score |
-| 18 | Tue Nov 10 | remember tool with y/n confirm | Fact survives a restart |
+| 17 | Mon Nov 9 | Tune chunk size and k | Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. Verified on the Mac after re-ingest (72 chunks): top-1 16/20 -> 18/20, hit@3 19/20 -> 20/20, MRR 0.875 -> 0.950. min_score set to 0.51 |
+| 18 | Tue Nov 10 | remember tool with y/n confirm | Code done (Oct 25), 99 tests pass. NOT yet tried on the Mac: tell Jarvis to remember a fact, answer y, quit, restart, ask for it |
 | 19 | Wed Nov 11 | Incremental ingest (hash files) | Second ingest embeds 0 new chunks |
 | 20 | Thu Nov 12 | Prompt injection test | Result written down, no write without confirm |
 | 21 | Fri Nov 13 | Memory tests on a temp store | Tests never touch real data |

@@ -10,6 +10,7 @@ from typing import Callable
 
 from ..config import Config
 from ..llm import LLMError, OllamaClient
+from ..memory.remember import Proposals
 from ..memory.search import search_notes as run_search
 from ..memory.store import StoreError
 from . import notes
@@ -22,7 +23,8 @@ def _now_text() -> str:
     return f"It is {now:%A, %d %B %Y}, {now:%I:%M %p}, local time."
 
 
-def build_registry(cfg: Config, embed: Callable[[list[str]], list[list[float]]] | None = None) -> Registry:
+def build_registry(cfg: Config, embed: Callable[[list[str]], list[list[float]]] | None = None,
+                   proposals: Proposals | None = None) -> Registry:
     if embed is None:  # no network call happens until a search is actually run
         embed = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model).embed
 
@@ -87,4 +89,21 @@ def build_registry(cfg: Config, embed: Callable[[list[str]], list[list[float]]] 
         },
         fn=search_notes,
     ))
+    if proposals is not None:  # only interfaces that can ask the user get this tool (not the MCP server)
+        def remember(fact: str) -> str:
+            proposals.add(fact)
+            return ("Proposed to the user for approval. It is NOT saved yet. "
+                    "Tell the user you asked them to confirm; do not say it is saved.")
+
+        reg.register(Tool(
+            name="remember",
+            description="Propose saving ONE short fact about the user to long-term memory. Use it only when the "
+                        "user explicitly asks you to remember something. The user must approve; you cannot save it.",
+            parameters={
+                "type": "object",
+                "properties": {"fact": {"type": "string", "description": "one short factual sentence"}},
+                "required": ["fact"],
+            },
+            fn=remember,
+        ))
     return reg

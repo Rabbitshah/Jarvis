@@ -13,7 +13,7 @@ max_tool_rounds = 4
 max_history = 40
 tool_timeout_seconds = 10   # a stuck tool returns an error after this long
 system_prompt = """You are Jarvis, a concise personal assistant running fully on the user's own machine.
-Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts, naming the file. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
+Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts, naming the file. Use remember only when the user explicitly asks you to remember something; it needs their approval, so never say it is saved. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
 Trust tool results and answer directly from them; do not ask the user for information a tool already gave.
 If a tool returns an error, tell the user plainly. Keep answers short."""
 
@@ -25,7 +25,7 @@ index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to dele
 [memory]
 enabled = true        # put matching note excerpts into each question
 k = 3                 # how many excerpts at most
-min_score = 0.5       # ignore weaker matches (calibrate with scripts/search-eval.sh)
+min_score = 0.51      # ignore weaker matches (real scores Oct 25: right note >= 0.521, off-topic <= 0.494)
 # The next four change how notes are embedded. After changing any of them, run scripts/ingest.sh again.
 chunk_chars = 400     # max characters per chunk (400 beat 800 and 1200 in scripts/tune.sh, see docs/TUNING.md)
 note_header = true    # put "Note: <file name>" in front of each chunk before embedding
