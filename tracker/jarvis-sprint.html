@@ -241,7 +241,7 @@ const DAYS = [
     "n": 17,
     "date": "2026-11-09",
     "task": "Tune chunk size and k",
-    "done": "Code done early (Oct 24), 86 tests pass; dry run with fake embeddings OK. NOT yet run on the Mac: bash scripts/tune.sh writes docs/TUNING.md (12 variants: chunk size x header x task prefix)",
+    "done": "Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. STILL TO DO: re-ingest and re-run search-eval to confirm the real \"after\" and re-check min_score",
     "w": 4
   },
   {
@@ -469,6 +469,13 @@ const LOG = [
     "did": "Day 14 verified on the Mac: mcp-smoke ALL GOOD with the search check, Inspector returns search_notes answers. Week 3 is finished (Day 15 catch-up not needed). Day 16 code: test set grown from 5 to 20 cases (I wrote the 15 new ones from the notes; a case can list several acceptable notes). Script now prints top-1, hit@3 and MRR (average of 1/rank, so rank 1 = 1, rank 2 = 0.5, miss = 0)",
     "broke": "You pasted the Inspector link with its token in the chat. It only works on your machine while the Inspector runs, but do not share those links",
     "next": "Run scripts/search-eval.sh on the Mac and paste the table. That is the \"before\" number for Day 17 tuning"
+  },
+  {
+    "date": "2026-10-24",
+    "hours": "0",
+    "did": "Day 17 tuning run on the Mac (12 variants). Smaller chunks win in every comparison: 400 chars MRR 0.935-0.975, 800 chars 0.867-0.897, 1200 chars 0.756-0.871. Current config (800, header, no prefix) scored top-1 16/20, MRR 0.885. Header on/off and task prefix on/off moved results by 1 question or less at 400, so they are noise and unchanged. Config chunk_chars set to 400",
+    "broke": "Smaller chunks give 72 chunks instead of 38 and shorter excerpts; the test only checks that the right note is found, not that the excerpt holds the whole answer. Score scale also shifts with chunk size, so min_score 0.5 may now be wrong",
+    "next": "Run scripts/ingest.sh (expect 72 chunks), then scripts/search-eval.sh and paste it: that is the real \"after\" and sets min_score"
   }
 ];
 // ---- END DATA ----

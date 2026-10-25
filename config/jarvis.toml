@@ -27,7 +27,7 @@ enabled = true        # put matching note excerpts into each question
 k = 3                 # how many excerpts at most
 min_score = 0.5       # ignore weaker matches (calibrate with scripts/search-eval.sh)
 # The next four change how notes are embedded. After changing any of them, run scripts/ingest.sh again.
-chunk_chars = 800     # max characters per chunk
+chunk_chars = 400     # max characters per chunk (400 beat 800 and 1200 in scripts/tune.sh, see docs/TUNING.md)
 note_header = true    # put "Note: <file name>" in front of each chunk before embedding
 doc_prefix = ""       # task prefix for notes, e.g. "search_document: " (nomic-embed-text)
 query_prefix = ""     # task prefix for questions, e.g. "search_query: "
