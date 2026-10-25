@@ -93,7 +93,7 @@ class Agent:
                     yield {"type": "tool_result", "name": name, "result": result}
                     if self.proposals:
                         for p in self.proposals.take_new():
-                            yield {"type": "confirm", "id": p.id, "fact": p.fact}
+                            yield {"type": "confirm", "id": p.id, "fact": p.fact, "from_context": bool(ctx)}
             yield {"type": "error", "message": "tool loop limit reached"}
         except LLMError as exc:
             yield {"type": "error", "message": str(exc)}

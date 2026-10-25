@@ -14,7 +14,7 @@ def run(coro):
 def stdio_params(cfg):
     return StdioServerParameters(
         command=sys.executable, args=["-m", "jarvis.mcp_server"],
-        env={"JARVIS_NOTES_DIR": str(cfg.notes_dir)},
+        env={"JARVIS_NOTES_DIR": str(cfg.notes_dir), "JARVIS_INDEX_DIR": str(cfg.index_dir)},
     )
 
 
@@ -61,7 +61,7 @@ def test_works_through_mcp_run_like_the_inspector(cfg):
 
     params = StdioServerParameters(
         command=str(Path(sys.executable).parent / "mcp"), args=["run", mcp_server.__file__],
-        env={"JARVIS_NOTES_DIR": str(cfg.notes_dir)},
+        env={"JARVIS_NOTES_DIR": str(cfg.notes_dir), "JARVIS_INDEX_DIR": str(cfg.index_dir)},
     )
 
     async def go():

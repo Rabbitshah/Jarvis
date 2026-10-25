@@ -116,6 +116,8 @@ def chat_loop() -> int:
                 print(f"\n  [error] {ev['message']}")
         print()
         for ev in asked:  # only a typed "y" from you saves anything
+            if ev.get("from_context"):
+                print("  ! Notes were shown to the model this turn. Save only if this fact really came from you.")
             try:
                 answer = input(f"  Save to memory? \"{ev['fact']}\"  [y/N] ").strip().lower()
             except (EOFError, KeyboardInterrupt):

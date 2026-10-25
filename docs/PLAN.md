@@ -39,9 +39,9 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 16 | Sun Nov 8 | 20 question test set and script | DONE early (Oct 24): 20 cases; baseline on the Mac: top-1 16/20, hit@3 19/20, MRR 0.875 |
 | 17 | Mon Nov 9 | Tune chunk size and k | Table DONE (Oct 24, docs/TUNING.md): 400-char chunks beat 800 and 1200 (MRR 0.95-0.98 vs 0.87-0.90 vs 0.76-0.87). Config set to 400. Header and task prefix: no clear effect, left unchanged. Verified on the Mac after re-ingest (72 chunks): top-1 16/20 -> 18/20, hit@3 19/20 -> 20/20, MRR 0.875 -> 0.950. min_score set to 0.51 |
 | 18 | Tue Nov 10 | remember tool with y/n confirm | DONE early (Oct 25): on the Mac, remembered a fact with y, restarted, it was found; an n answer saved nothing |
-| 19 | Wed Nov 11 | Incremental ingest (hash files) | Code done (Oct 25), 110 tests pass. NOT yet run on the Mac: bash scripts/ingest.sh twice; the second run must say embedded now: 0 |
-| 20 | Thu Nov 12 | Prompt injection test | Result written down, no write without confirm |
-| 21 | Fri Nov 13 | Memory tests on a temp store | Tests never touch real data |
+| 19 | Wed Nov 11 | Incremental ingest (hash files) | DONE early (Oct 25): on the Mac the first run embedded 73 chunks, the second run embedded 0 (21 notes unchanged) |
+| 20 | Thu Nov 12 | Prompt injection test | DONE early (Oct 25), result in docs/INJECTION.md: 1 of 15 valid trials manipulated (read-secret: the model read the secret note because a note told it to; it did not paste it). 0 writes without approval |
+| 21 | Fri Nov 13 | Memory tests on a temp store | Code done (Oct 25), 119 tests pass. A guard fails the run if a test changes your real notes or real index; proved it fails on a bad test. NOT yet run on the Mac: bash scripts/test.sh |
 | 22 | Sat Nov 14 | Catch-up and checkpoint | n/a |
 
 ## Week 5 (Nov 15-21): Voice

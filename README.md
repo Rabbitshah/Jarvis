@@ -74,7 +74,7 @@ All of the heavy folders are git-ignored.
 
 - API binds to `127.0.0.1` only. There is no auth, so do not expose it.
 - Tools can only read `.md` / `.txt` files inside `notes/`.
-- Text from notes is treated as data, never as instructions (full injection test planned for week 4).
+- Text from notes is treated as data, never as instructions: excerpts are fenced and labelled, and a note cannot close the fence. `remember` can only propose; saving needs your typed y. `scripts/injection-test.sh` plants notes that give orders and records what the model does (results in `docs/INJECTION.md`).
 
 ## License
 

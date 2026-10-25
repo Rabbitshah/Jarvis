@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -26,10 +27,14 @@ class Context:
     files: list[str]
 
 
+_FAKE_TAG = re.compile(r"</?\s*notes\s*>", re.IGNORECASE)
+
+
 def build_context(hits) -> Context | None:
     if not hits:
         return None
-    blocks = [f"[{h.file}]\n{h.text}" for h in hits]
+    # a note must not be able to write its own </notes> and "escape" the data block
+    blocks = [f"[{h.file}]\n{_FAKE_TAG.sub('[notes-tag removed]', h.text)}" for h in hits]
     files = list(dict.fromkeys(h.file for h in hits))
     return Context(f"{HEADER}\n\n<notes>\n" + "\n\n".join(blocks) + "\n</notes>", files)
 
