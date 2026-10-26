@@ -31,6 +31,7 @@ class Config:
     memory_note_header: bool
     memory_doc_prefix: str
     memory_query_prefix: str
+    stt: str
     api_host: str
     api_port: int
 
@@ -40,6 +41,7 @@ def load_config(path: str | Path | None = None) -> Config:
     data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
     llm, agent, paths, api = data["llm"], data["agent"], data["paths"], data["api"]
     memory = data.get("memory", {})
+    voice = data.get("voice", {})
 
     notes = Path(os.environ.get("JARVIS_NOTES_DIR") or paths["notes_dir"])
     if not notes.is_absolute():
@@ -69,6 +71,7 @@ def load_config(path: str | Path | None = None) -> Config:
         memory_note_header=bool(memory.get("note_header", True)),
         memory_doc_prefix=str(memory.get("doc_prefix", "")),
         memory_query_prefix=str(memory.get("query_prefix", "")),
+        stt=os.environ.get("JARVIS_STT") or voice.get("stt", "faster:small"),
         api_host=api["host"],
         api_port=int(api["port"]),
     )

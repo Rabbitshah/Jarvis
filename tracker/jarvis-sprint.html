@@ -290,7 +290,7 @@ const DAYS = [
     "n": 24,
     "date": "2026-11-16",
     "task": "Whisper transcription; pick faster-whisper or mlx-whisper by measuring",
-    "done": "3 clips transcribed correctly",
+    "done": "DONE (Oct 26) on the Mac. Chosen: mlx-whisper small (config [voice] stt). 3 clips, 0 wrong words with both small models; time per clip 0.07 s (mlx) vs 0.87 s (faster-whisper). Base models made mistakes (\"Rewind me\", \"Valladara\"). `scripts/transcribe.sh clip.wav` runs it. 140 tests",
     "w": 5
   },
   {
@@ -525,6 +525,20 @@ const LOG = [
     "did": "Day 23 verified on the Mac: setup installed sounddevice 0.5.6 (PortAudio bundled, no error), 133 tests pass, `--devices` shows MacBook Pro Microphone (default) and the iPhone mic, 6.3 s recording saved with peak 11644/32767 (healthy level, permission OK) and played back",
     "broke": "Default input is the built-in mic: it will pick up Jarvis's own voice from the speakers, which matters for Day 25-28. The iPhone shows up as an input device (Continuity), so the default can switch by itself",
     "next": "Day 24: Whisper transcription. Measure faster-whisper vs mlx-whisper on test.wav plus 2 more clips"
+  },
+  {
+    "date": "2026-10-26",
+    "hours": "0",
+    "did": "Day 24 code: voice/stt.py with two engines behind one interface (faster-whisper on CPU with int8, mlx-whisper on the Apple GPU). Both get the recording as a numpy array, so ffmpeg is not needed. voice/wer.py counts wrong words. `scripts/stt-bench.sh` runs 4 engines (faster base/small, mlx base/small) on every clip in .tools/recordings, ignores the first (warm-up) run, and writes docs/STT.md with load time, time per clip, real-time factor and word error rate. Bench libraries are in a separate `bench` group so normal installs stay light. 139 tests pass (fake engines, no model downloads)",
+    "broke": "mlx-whisper pulls in torch, numba and scipy (the lock file shows it): a big install cost that counts against it. Not verified: that mlx-whisper accepts a numpy array (its docs page only shows file paths), and that the mlx-community model names exist (I could not reach Hugging Face from here). The bench skips an engine that fails to load and says why",
+    "next": "On the Mac: record 3 clips with known text, run scripts/stt-bench.sh, paste the output"
+  },
+  {
+    "date": "2026-10-26",
+    "hours": "0",
+    "did": "Day 24 measured on the Mac (docs/STT.md), 3 clips with known text. Small models: 0 wrong words on all 3, for both engines. Base models: mlx base got 'Rewind me' and 'What time is it?' (dropped 'Hey Jarvis'), faster base 'Valladara' for Vadodara. Speed per clip: mlx small 0.07 s, faster small 0.87 s (12x). DECISION: mlx-whisper small, set in config [voice] stt (env JARVIS_STT overrides). Why: accuracy is tied, the speed gap is the only difference and it is added to every spoken turn. Installed by pyproject only on Apple Silicon; other machines get faster-whisper (use JARVIS_STT=faster:small). mlx-whisper accepts a numpy array (verified). Added `jarvis --transcribe` and scripts/transcribe.sh. 140 tests pass",
+    "broke": "3 clips, one speaker, quiet room: this shows both small models are good, it does not rank them on accuracy. Load times in STT.md include the first model download (30-70 s), so they mean nothing; real load time is measured at startup in Day 25. mlx-whisper adds torch, numba, scipy to the install. The ROG laptop (Windows/NVIDIA) would use faster-whisper: untested. Ollama and mlx both use the Apple GPU; they run one after the other in a turn, memory impact not measured",
+    "next": "Day 25: speak a question, Jarvis transcribes it and answers in text"
   }
 ];
 // ---- END DATA ----

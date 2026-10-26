@@ -48,7 +48,7 @@ Needs about 20 real notes in notes/ before Nov 3.
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
 | 23 | Sun Nov 15 | Push-to-talk recording to WAV (Enter starts, Enter stops) | DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back |
-| 24 | Mon Nov 16 | Whisper transcription; pick faster-whisper or mlx-whisper by measuring | 3 clips transcribed correctly |
+| 24 | Mon Nov 16 | Whisper transcription; pick faster-whisper or mlx-whisper by measuring | DONE (Oct 26) on the Mac. Chosen: mlx-whisper small (config [voice] stt). 3 clips, 0 wrong words with both small models; time per clip 0.07 s (mlx) vs 0.87 s (faster-whisper). Base models made mistakes ("Rewind me", "Valladara"). `scripts/transcribe.sh clip.wav` runs it. 140 tests |
 | 25 | Tue Nov 17 | Voice into the agent | Spoken question gets a text answer |
 | 26 | Wed Nov 18 | Piper reply | Reply is spoken |
 | 27 | Thu Nov 19 | Speak sentence by sentence; measure time to first audio | Number is in the README |

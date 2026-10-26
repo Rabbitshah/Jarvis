@@ -138,6 +138,20 @@ def devices_cmd() -> int:
     return 0
 
 
+def transcribe_cmd(path: str) -> int:
+    from jarvis.voice import stt
+    cfg = load_config()
+    try:
+        engine = stt.make(cfg.stt)
+        audio = stt.load_audio(Path(path).expanduser())
+        text, took = stt.timed(engine.transcribe, audio)
+    except stt.SttError as exc:
+        print(f"error: {exc}")
+        return 1
+    print(f"{text}\n({engine.name}, {took:.2f} s for {len(audio) / stt.SAMPLE_RATE:.1f} s of audio, includes model load)")
+    return 0
+
+
 def record_cmd(path: str) -> int:
     from jarvis.voice import recorder
     out = Path(path).expanduser()
@@ -163,8 +177,11 @@ def main() -> None:
     parser.add_argument("--search", metavar="QUERY", help="search the note index and exit")
     parser.add_argument("-k", type=int, default=3, help="how many results for --search")
     parser.add_argument("--record", metavar="WAV", help="record the microphone to a WAV file, play it back, exit")
+    parser.add_argument("--transcribe", metavar="WAV", help="turn a WAV file into text with the configured Whisper, exit")
     parser.add_argument("--devices", action="store_true", help="list microphones and exit")
     args = parser.parse_args()
+    if args.transcribe:
+        sys.exit(transcribe_cmd(args.transcribe))
     if args.devices:
         sys.exit(devices_cmd())
     if args.record:

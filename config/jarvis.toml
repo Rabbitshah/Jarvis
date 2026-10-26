@@ -35,6 +35,11 @@ note_header = true    # put "Note: <file name>" in front of each chunk before em
 doc_prefix = ""       # task prefix for notes, e.g. "search_document: " (nomic-embed-text)
 query_prefix = ""     # task prefix for questions, e.g. "search_query: "
 
+[voice]
+# Day 24 measurement (docs/STT.md): small model, 0 wrong words on 3 clips; mlx 0.07 s vs faster-whisper 0.87 s per clip.
+# mlx runs only on Apple Silicon. On other machines use "faster:small" (or env JARVIS_STT).
+stt = "mlx:mlx-community/whisper-small-mlx"
+
 [api]
 host = "127.0.0.1"    # local only. Do not change without adding auth.
 port = 8000
