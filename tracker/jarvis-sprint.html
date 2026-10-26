@@ -113,8 +113,8 @@ const PLAN = [
     "w": 5,
     "from": "2026-11-15",
     "to": "2026-11-21",
-    "focus": "Voice: Push-to-talk recording to WAV; Whisper transcription; pick faster-whisper or mlx-whisper by measuring; Voice into the agent; Piper reply; Sp",
-    "done": "WAV plays back"
+    "focus": "Voice: Push-to-talk recording to WAV (Enter starts, Enter stops); Whisper transcription; pick faster-whisper or mlx-whisper by measuring; Voice int",
+    "done": "DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back"
   },
   {
     "w": 6,
@@ -276,14 +276,14 @@ const DAYS = [
     "n": 22,
     "date": "2026-11-14",
     "task": "Checkpoint and cleanup",
-    "done": "Code done (Oct 25), 126 tests pass: private notes list, sources added by code, MIT LICENSE, README with real numbers, scripts/clean-clone-test.sh. STILL TO DO on the Mac: push, run the clean-clone test, fix the voice line in notes/06-jarvis-project.md (Piper only), re-ingest, re-run injection-test.sh --trials 10",
+    "done": "DONE (Oct 25): 126 tests pass, clean-clone test PASS, citations work (\"Notes consulted\"), injection 1/50 manipulated and 0 writes. Still open for you: fix the voice line in notes/06-jarvis-project.md (Piper only), re-run ingest.sh, push docs/INJECTION.md",
     "w": 4
   },
   {
     "n": 23,
     "date": "2026-11-15",
-    "task": "Push-to-talk recording to WAV",
-    "done": "WAV plays back",
+    "task": "Push-to-talk recording to WAV (Enter starts, Enter stops)",
+    "done": "DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back",
     "w": 5
   },
   {
@@ -511,6 +511,20 @@ const LOG = [
     "did": "Decisions applied. (1) Private notes: notes/private/* and *password*/*salary* (config private_notes) are never listed, read, searched or indexed; a private note answers \"not found\" like a missing one; old index chunks are pruned on the next ingest and also filtered at search time. (2) The program adds \"Notes consulted: ...\" from the notes that reached the model; the model is told not to write sources. (3) MIT LICENSE added (Maanav Shah, 2026). (4) Voice is Piper only; PRD already lists ElevenLabs as out of scope. (5) Voice plan: push-to-talk first, wake word on Day 28. (6) README rewritten with measured numbers; scripts/clean-clone-test.sh added; setup.sh has SKIP_MODELS=1. 126 tests pass",
     "broke": "The injection result was measured before these changes, so it should be re-run. notes/06-jarvis-project.md still says ElevenLabs: you need to change that line, I do not edit your notes",
     "next": "Push, run scripts/clean-clone-test.sh, fix note 06, run ingest.sh, then injection-test.sh --trials 10"
+  },
+  {
+    "date": "2026-10-25",
+    "hours": "0",
+    "did": "Day 22 closed on the Mac: 126 tests, clean-clone PASS, citations OK, injection re-run 1/50 manipulated and 0 writes. Day 23 code: `jarvis --record file.wav` (Enter starts, Enter stops, 30 s max) saves mono 16 kHz 16-bit WAV, then plays it with afplay; `jarvis --devices` lists microphones; scripts/record.sh wraps both. A recording that is all zeros prints the macOS Terminal-microphone-permission hint. New deps: sounddevice, numpy. 133 tests pass (fake microphone, no real audio)",
+    "broke": "Not tested with a real microphone: I have none here. True hold-to-talk needs extra macOS permissions, so I used Enter/Enter. Whether sounddevice's macOS wheel bundles PortAudio is from memory of its docs (they say wheels include it); uv sync will show",
+    "next": "On the Mac: git pull not needed; run scripts/setup.sh (or `uv sync`), scripts/test.sh, then scripts/record.sh --devices and scripts/record.sh"
+  },
+  {
+    "date": "2026-10-26",
+    "hours": "0",
+    "did": "Day 23 verified on the Mac: setup installed sounddevice 0.5.6 (PortAudio bundled, no error), 133 tests pass, `--devices` shows MacBook Pro Microphone (default) and the iPhone mic, 6.3 s recording saved with peak 11644/32767 (healthy level, permission OK) and played back",
+    "broke": "Default input is the built-in mic: it will pick up Jarvis's own voice from the speakers, which matters for Day 25-28. The iPhone shows up as an input device (Continuity), so the default can switch by itself",
+    "next": "Day 24: Whisper transcription. Measure faster-whisper vs mlx-whisper on test.wav plus 2 more clips"
   }
 ];
 // ---- END DATA ----

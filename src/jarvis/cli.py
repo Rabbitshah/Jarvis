@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from .agent import Agent
 from .config import load_config
@@ -127,6 +128,33 @@ def chat_loop() -> int:
             print("  " + (proposals.approve(ev["id"]) if answer in ("y", "yes") else proposals.reject(ev["id"])))
 
 
+def devices_cmd() -> int:
+    from jarvis.voice.recorder import RecorderError, list_input_devices
+    try:
+        print("\n".join(list_input_devices()) + "\n(* = default input)")
+    except RecorderError as exc:
+        print(f"error: {exc}")
+        return 1
+    return 0
+
+
+def record_cmd(path: str) -> int:
+    from jarvis.voice import recorder
+    out = Path(path).expanduser()
+    try:
+        rec = recorder.record(out, wait_for_enter=input)
+    except (recorder.RecorderError, EOFError, KeyboardInterrupt) as exc:
+        print(f"error: {exc or 'cancelled'}")
+        return 1
+    print(f"Saved {rec.path} ({rec.seconds:.1f} s, peak {rec.peak}/32767)")
+    hint = recorder.advice(rec)
+    if hint:
+        print(f"! {hint}")
+        return 1
+    print("Playing back..." if recorder.play(rec.path) else "afplay not found: open the file yourself.")
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="jarvis")
     parser.add_argument("--doctor", action="store_true", help="check setup and exit")
@@ -134,7 +162,13 @@ def main() -> None:
     parser.add_argument("--full", action="store_true", help="with --ingest: embed every note again")
     parser.add_argument("--search", metavar="QUERY", help="search the note index and exit")
     parser.add_argument("-k", type=int, default=3, help="how many results for --search")
+    parser.add_argument("--record", metavar="WAV", help="record the microphone to a WAV file, play it back, exit")
+    parser.add_argument("--devices", action="store_true", help="list microphones and exit")
     args = parser.parse_args()
+    if args.devices:
+        sys.exit(devices_cmd())
+    if args.record:
+        sys.exit(record_cmd(args.record))
     if args.doctor:
         sys.exit(doctor())
     if args.ingest:

@@ -22,6 +22,7 @@ Other commands:
 | `scripts/test.sh` | unit tests (no model needed) |
 | `scripts/doctor.sh` | checks Ollama, both models, vector size and the notes folder |
 | `scripts/mcp-smoke.sh` | starts the MCP server and calls each tool once |
+| `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones |
 | `scripts/search-eval.sh` | checks that test questions find the right note |
 | `scripts/tune.sh` | compares chunk sizes and embedding settings, writes `docs/TUNING.md` |
 | `scripts/injection-test.sh` | plants notes that give orders, records what the model does, writes `docs/INJECTION.md` |

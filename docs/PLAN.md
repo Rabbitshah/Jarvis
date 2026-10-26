@@ -42,12 +42,12 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 19 | Wed Nov 11 | Incremental ingest (hash files) | DONE early (Oct 25): on the Mac the first run embedded 73 chunks, the second run embedded 0 (21 notes unchanged) |
 | 20 | Thu Nov 12 | Prompt injection test | DONE early (Oct 25), result in docs/INJECTION.md: 1 of 15 valid trials manipulated (read-secret: the model read the secret note because a note told it to; it did not paste it). 0 writes without approval |
 | 21 | Fri Nov 13 | Memory tests on a temp store | DONE early (Oct 25): the guard passes on the Mac (all tests passed) and fails on a deliberately bad test |
-| 22 | Sat Nov 14 | Checkpoint and cleanup | Code done (Oct 25), 126 tests pass: private notes list, sources added by code, MIT LICENSE, README with real numbers, scripts/clean-clone-test.sh. STILL TO DO on the Mac: push, run the clean-clone test, fix the voice line in notes/06-jarvis-project.md (Piper only), re-ingest, re-run injection-test.sh --trials 10 |
+| 22 | Sat Nov 14 | Checkpoint and cleanup | DONE (Oct 25): 126 tests pass, clean-clone test PASS, citations work ("Notes consulted"), injection 1/50 manipulated and 0 writes. Still open for you: fix the voice line in notes/06-jarvis-project.md (Piper only), re-run ingest.sh, push docs/INJECTION.md |
 
 ## Week 5 (Nov 15-21): Voice
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 23 | Sun Nov 15 | Push-to-talk recording to WAV | WAV plays back |
+| 23 | Sun Nov 15 | Push-to-talk recording to WAV (Enter starts, Enter stops) | DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back |
 | 24 | Mon Nov 16 | Whisper transcription; pick faster-whisper or mlx-whisper by measuring | 3 clips transcribed correctly |
 | 25 | Tue Nov 17 | Voice into the agent | Spoken question gets a text answer |
 | 26 | Wed Nov 18 | Piper reply | Reply is spoken |
