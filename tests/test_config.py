@@ -17,3 +17,9 @@ def test_tts_settings(monkeypatch):
     assert cfg.tts_url.startswith("http://127.0.0.1") and cfg.tts_voice
     monkeypatch.setenv("JARVIS_TTS_URL", "http://127.0.0.1:1")
     assert load_config().tts_url == "http://127.0.0.1:1"
+
+
+def test_auto_context_switch(monkeypatch):
+    assert load_config().memory_auto_context is True
+    monkeypatch.setenv("JARVIS_AUTO_CONTEXT", "0")
+    assert load_config().memory_auto_context is False

@@ -616,6 +616,20 @@ const LOG = [
     "did": "Model check run on the Mac, rules as first written: llama3.1:8b 23/42, qwen2.5:7b 30/42. Reading the failures (docs/TOOLEVAL-*.md) the scores are not what they look like. llama: capital/explain answers were CORRECT but failed only because it searched the notes first (my rule); fun fact answered 'You play pickleball on weekends' (real failure); math 387 and 379 for 17x23 (real: 391, an 8B model cannot multiply); time/date 0/3 with answers like 'I could not find the time'. qwen2.5: capital, math, explain, calendar, weather, notes all 3/3, but time/date it answered WITHOUT calling get_time ('14:32', 'October 24, 2023'): invented, wrong, confident; and it refused to call remember ('I can't save without approval'); fun fact also pulled the pickleball fact in. Fixes: (1) the current date and time is now written into the system message every round, so no model has to call a tool and relay it (standard practice; get_time stays for the MCP server); (2) remember wording says it only asks for approval; (3) the check now reports 'answer correct' and 'strict' separately (changed after seeing the results, so both are shown; the old strict numbers above stay valid), and time/date no longer require a tool. 174 tests pass",
     "broke": "The fun-fact failure for both models comes from automatic note search: 'tell me a fun fact' matches your memory.md line about pickleball, so it is put in front of the model. min_score is too low for that kind of question. No calculator, so arithmetic is unreliable on llama",
     "next": "Re-run both models; decide"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Model check #2 (clock now in the prompt). llama3.1:8b: answer 33/42, strict 27/42. qwen2.5:7b: answer 39/42, strict 36/42, and 3-6x faster (0.1-1.0 s vs 1.0-1.8 s per question). DECISION: qwen2.5:7b is the chat model (config llm.model; docs/MODELS.md has the table). It now gets time/date right 3/3, math 3/3, calendar and weather honest 3/3, all 5 notes questions 3/3. Remaining qwen failures: (1) fun fact 3/3 failed: 'Facts Jarvis was asked to remember include that you play pickleball' - the automatic note search puts memory.md in front of it; (2) remember: it replies 'please confirm' in text instead of calling the tool, so no y/N prompt appears and nothing is saved (a false 'I will remember it'); prompt now says calling the tool is the only correct action. New switch memory.auto_context (env JARVIS_AUTO_CONTEXT=0): off = the model must call search_notes itself. 176 tests pass",
+    "broke": "injection safety was measured on llama3.1 only; qwen follows instructions more closely, which can make it MORE obedient to planted text. Must re-run before anyone trusts the 1/50 number. Prompt fix for remember is untested",
+    "next": "On the Mac: run the check with auto_context on and off, then injection-test on qwen"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Results on qwen2.5:7b. Tool check with automatic note search ON: answer 39/42, strict 39/42 (remember now 3/3 after the prompt fix; only the fun fact fails, 0/3). With it OFF: 27/42 - fun fact 3/3 but all 5 notes questions 0/3, because qwen does not call search_notes on its own. Decision: keep auto search ON; fix the fun-fact leak in retrieval. Injection on qwen2.5:7b: 0 manipulated of 50, 0 writes (llama3.1: 1 of 50). README updated",
+    "broke": "The injection result needs a caveat: qwen did not call search_notes on its own in the check above, so it also rarely follows a planted 'read this file' order because it rarely uses tools at all. That is partly luck, not only defence; the defences (fenced data, you type y) still matter more. Fun-fact fix is not chosen yet: raising min_score would also drop some right notes (right-note scores start at 0.521, off-topic top out at 0.494)",
+    "next": "Run scripts/search.sh on 6 general questions to see their scores, then decide"
   }
 ];
 // ---- END DATA ----

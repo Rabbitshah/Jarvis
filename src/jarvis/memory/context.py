@@ -42,7 +42,7 @@ def make_context_fn(cfg: Config, embed: Embed) -> Callable[[str], Context | None
     """Returns a function question -> Context or None. Never raises: a broken or missing
     index must not stop normal chat."""
     def context_for(question: str) -> Context | None:
-        if not cfg.memory_enabled:
+        if not cfg.memory_enabled or not cfg.memory_auto_context:
             return None
         try:
             hits = search_notes(cfg, embed, question[:MAX_QUERY_CHARS], cfg.memory_k)

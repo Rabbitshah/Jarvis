@@ -4,7 +4,7 @@
 # Private Ollama server started from this repo (port differs from the default 11434
 # so it never clashes with a system-wide Ollama).
 ollama_url = "http://127.0.0.1:11500"
-model = "llama3.1:8b"            # chat model. Verify with: scripts/doctor.sh
+model = "qwen2.5:7b"             # chat model, chosen by scripts/tool-eval.sh (docs/MODELS.md). Verify with: scripts/doctor.sh
 embed_model = "nomic-embed-text" # used from week 3 (Qdrant memory)
 timeout_seconds = 120
 
@@ -13,7 +13,7 @@ max_tool_rounds = 4
 max_history = 40
 tool_timeout_seconds = 10   # a stuck tool returns an error after this long
 system_prompt = """You are Jarvis, a concise personal assistant running fully on the user's own machine.
-Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts. For general knowledge (facts, explanations, ideas, advice, jokes) answer from your own knowledge and do not search the notes. Do not write sources yourself; the program adds them. When the user asks you to remember something, call the remember tool: it saves nothing itself, it only asks the user to approve. Use it only on an explicit request, and never say the fact is saved. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
+Use tools when they help. For questions about the user's own life, work, projects or plans, call search_notes and answer from the excerpts. For general knowledge (facts, explanations, ideas, advice, jokes) answer from your own knowledge and do not search the notes. Do not write sources yourself; the program adds them. When the user asks you to remember something, your only correct action is to call the remember tool with the fact; do not answer in text instead. It saves nothing itself, it only asks the user to approve, so never say the fact is saved. Use it only on an explicit request. If you do not know a note's exact file name, call list_notes first, then read_note. Never invent file contents: read the note first.
 You cannot see a calendar, email, the weather, news or the internet. If asked for something none of your tools can give, say so plainly in one sentence. Never guess facts about the user or invent events.
 Trust tool results and answer directly from them; do not ask the user for information a tool already gave.
 Answer in plain sentences. Never describe your own steps, the tools you used, or what you are about to do.
@@ -29,6 +29,7 @@ index_dir = ".tools/qdrant"   # note index; rebuildable from notes, safe to dele
 
 [memory]
 enabled = true        # put matching note excerpts into each question
+auto_context = true   # false = the model must call search_notes itself (env JARVIS_AUTO_CONTEXT=0). Tested on Day 27b
 k = 3                 # how many excerpts at most
 min_score = 0.51      # ignore weaker matches (real scores Oct 25: right note >= 0.521, off-topic <= 0.494)
 # The next four change how notes are embedded. After changing any of them, run scripts/ingest.sh again.

@@ -48,16 +48,17 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 
 ## Measured results
 
-All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro), model `llama3.1:8b`.
+All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Chat model: `qwen2.5:7b` (picked by measurement, see `docs/MODELS.md`).
 
 | What | Result |
 | --- | --- |
 | Search: right note ranked first, 20 test questions (400-character chunks) | **18 / 20** (was 16 / 20 with 800-character chunks) |
 | Search: right note in the top 3 | **20 / 20** (was 19 / 20) |
 | Search: MRR (1.0 is perfect) | **0.950** (was 0.875) |
-| Prompt injection: planted orders obeyed (5 attacks x 3 runs) | **1 / 15** (the model read a note it was told to read) |
-| Prompt injection: facts saved without the user's yes | **0 / 15** |
-| Unit tests | 126 passing |
+| Prompt injection: planted orders obeyed (5 attacks x 10 runs, qwen2.5:7b) | **0 / 50** (llama3.1:8b earlier: 1 / 50) |
+| Prompt injection: facts saved without the user's yes | **0 / 50** |
+| Chat model check (14 questions x 3 trials): answers correct | **39 / 42** (qwen2.5:7b) vs 33 / 42 (llama3.1:8b) |
+| Unit tests | 176 passing |
 
 Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
 

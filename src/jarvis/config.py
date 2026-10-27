@@ -25,6 +25,7 @@ class Config:
     ingest_exclude: tuple[str, ...]
     private_notes: tuple[str, ...]
     memory_enabled: bool
+    memory_auto_context: bool
     memory_k: int
     memory_min_score: float
     memory_chunk_chars: int
@@ -68,6 +69,8 @@ def load_config(path: str | Path | None = None) -> Config:
         ingest_exclude=tuple(paths.get("ingest_exclude", [])),
         private_notes=tuple(paths.get("private_notes", [])),
         memory_enabled=bool(memory.get("enabled", True)),
+        memory_auto_context=(os.environ["JARVIS_AUTO_CONTEXT"].lower() not in ("0", "false", "no")
+                             if "JARVIS_AUTO_CONTEXT" in os.environ else bool(memory.get("auto_context", True))),
         memory_k=int(memory.get("k", 3)),
         memory_min_score=float(memory.get("min_score", 0.5)),
         memory_chunk_chars=int(memory.get("chunk_chars", 800)),

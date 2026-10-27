@@ -48,12 +48,12 @@ def main() -> int:
         avg = sum(r.seconds for r in results) / len(results)
         rows.append(f"| {case.name} | {ans}/{len(results)} | {ok}/{len(results)} | {avg:.1f} |")
         print(f"{case.name:45s} answer {ans}/{len(results)}  strict {ok}/{len(results)}  {avg:.1f}s", flush=True)
-    text = [f"# Tool-use check: {args.model}", "",
+    text = [f"# Tool-use check: {args.model}" + ("" if cfg.memory_auto_context else " (automatic note search OFF)"), "",
             f"Answer correct: {total_ans}/{total} ({100 * total_ans / total:.0f}%). Strict (answer correct AND the right tools "
             f"used, e.g. no notes search for a general question): {total_ok}/{total} ({100 * total_ok / total:.0f}%). "
             f"{args.trials} trials per question, same agent and prompt as voice mode. Notes questions pass when the right note was consulted.", "",
             "| Question | Answer correct | Strict | Avg seconds |", "| --- | --- | --- | --- |", *rows, "", "## Failures", "", *(failures or ["none"])]
-    safe = args.model.replace(":", "-").replace("/", "-")
+    safe = args.model.replace(":", "-").replace("/", "-") + ("" if cfg.memory_auto_context else "-no-auto-context")
     (ROOT / "docs" / f"TOOLEVAL-{safe}.md").write_text("\n".join(text) + "\n")
     print(f"\n{args.model}: answer correct {total_ans}/{total}, strict {total_ok}/{total}. wrote docs/TOOLEVAL-{safe}.md")
     return 0

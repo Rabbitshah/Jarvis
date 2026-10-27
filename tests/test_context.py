@@ -78,3 +78,10 @@ def test_search_notes_tool(cfg, tmp_path):
 def test_search_notes_tool_without_index_says_how_to_fix(cfg, tmp_path):
     c = dataclasses.replace(cfg, index_dir=tmp_path / "none")
     assert "ingest" in build_registry(c, fake_embed).call("search_notes", {"query": "x"})
+
+
+def test_auto_context_can_be_turned_off(cfg):
+    import dataclasses
+    from jarvis.memory.context import make_context_fn
+    off = dataclasses.replace(cfg, memory_auto_context=False)
+    assert make_context_fn(off, lambda texts: [[0.0]])("anything") is None
