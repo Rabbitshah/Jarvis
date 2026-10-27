@@ -31,8 +31,10 @@ def speakable(text: str, limit: int = MAX_SPOKEN_CHARS) -> str:
 
 
 class PiperClient:
-    def __init__(self, base_url: str, voice: str, timeout: float = 30.0, transport: httpx.BaseTransport | None = None):
+    def __init__(self, base_url: str, voice: str, timeout: float = 30.0, transport: httpx.BaseTransport | None = None,
+                 length_scale: float = 1.0):
         self.voice = voice
+        self.length_scale = length_scale  # below 1 = faster speech
         self._http = httpx.Client(base_url=base_url, timeout=timeout, transport=transport)
 
     def ping(self) -> bool:
@@ -44,12 +46,34 @@ class PiperClient:
     def synthesize(self, text: str) -> bytes:
         """Text -> WAV bytes."""
         try:
-            r = self._http.post("/synthesize", json={"text": text, "voice": self.voice})
+            r = self._http.post("/synthesize", json={"text": text, "voice": self.voice,
+                                                   "length_scale": self.length_scale})
         except httpx.HTTPError as exc:
             raise TtsError(f"Piper is not reachable ({exc}). Start it with scripts/piper-up.sh") from exc
         if r.status_code != 200:
             raise TtsError(f"Piper returned {r.status_code}: {r.text[:200]}")
         return r.content
+
+
+class Player:
+    """Plays WAV bytes with macOS afplay, one at a time. stop() cuts the current sound."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self._proc: subprocess.Popen | None = None
+
+    def available(self) -> bool:
+        return shutil.which("afplay") is not None
+
+    def play(self, wav: bytes) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_bytes(wav)
+        self._proc = subprocess.Popen([shutil.which("afplay") or "afplay", str(self.path)])
+        self._proc.wait()
+
+    def stop(self) -> None:
+        if self._proc and self._proc.poll() is None:
+            self._proc.terminate()
 
 
 def play_wav_bytes(wav: bytes, path: Path) -> bool:

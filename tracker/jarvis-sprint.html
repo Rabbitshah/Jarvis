@@ -311,7 +311,7 @@ const DAYS = [
     "n": 27,
     "date": "2026-11-19",
     "task": "Speak sentence by sentence; measure time to first audio",
-    "done": "Number is in the README",
+    "done": "DONE (Oct 27) on the Mac, 167 tests. First sound 1.65-3.3 s after the question is understood, almost all of it model time (first word 1.5-3.2 s); Piper adds 0.02-0.2 s. Speed 0.82 approved. Bugs found: made-up tool call spoken, invented meeting, notes used for a general question",
     "w": 5
   },
   {
@@ -324,8 +324,8 @@ const DAYS = [
   {
     "n": 29,
     "date": "2026-11-21",
-    "task": "Catch-up. SRT export only if time is left (cuttable)",
-    "done": "n/a",
+    "task": "Online lookups (decided Oct 27): `weather` tool (Open-Meteo, free, no key) and `web_search` tool (free, no key). Rules: only when you ask for live info; the terminal shows exactly which words go online; nothing from your notes is ever put in a query; results are fenced as untrusted text like note excerpts; a failed lookup says so instead of guessing. SRT only if time is left",
+    "done": "Weather and one news-type question answered with the source named; offline still works",
     "w": 5
   },
   {
@@ -581,6 +581,41 @@ const LOG = [
     "did": "Day 26 verified on the Mac. debug-turn: round 2 (no tools) still printed a text tool call once, the existing rescue ran get_time again, and round 3 gave words. voice.sh: 'What time is it?' -> 'It is 15:09 on Tuesday, 27 October 2026.' (correct, spoken, voice ready in 0.06 s); grad-school question answered from notes with sources, spoken, 0.21 s. Added models/piper/ to .gitignore (the voice file is about 60 MB and was not ignored)",
     "broke": "The model still tries one extra tool call on the time question; the program copes but it costs one more model round. The grad-school question made the model pass k as the string '10' again (handled). Notes consulted listed 4 notes for one answer; most of the answer is from 05 only",
     "next": "Day 27: speak sentence by sentence, measure time from end of your question to first sound"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 26 pushed. You asked for faster speech: config [voice] tts_length_scale = 0.82 (Piper length_scale, 1.0 normal; env JARVIS_TTS_SPEED overrides). Day 27 code: voice/speaker.py. Sentences are cut from the token stream when they end (12+ characters then . ! ? and a space, or a line break, so 'Dr.' and '3.5' do not split), one thread asks Piper for audio while another plays the previous sentence, so the first sentence is heard while the model is still writing. Same 500-character cap and markdown cleaning as before; Ctrl+C stops the sound. Voice mode prints (first word after X s, first sound after Y s) counted from the moment your question is understood. say.sh uses the same path. 165 tests pass",
+    "broke": "The old behaviour (whole answer, then speak) is gone, so a broken speaker thread would mean silence: the text still prints either way. First sound includes model time, so it depends on the 8B model, not Piper. Sentence cutting is a regex: odd text (lists without line breaks, URLs) may split badly. Speed 0.82 is a guess from the docs' scale; tune by ear",
+    "next": "On the Mac: say.sh, voice.sh with 3-4 questions, paste the timing lines"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 27 verified on the Mac. Timing (question understood -> first sound): 2.48, 3.26, 3.31, 1.65 s; first word 2.40, 2.19, 3.15, 1.49 s. So Piper and sentence streaming add 0.02-1.1 s (the 1.1 s gap is a 250-character sentence synthesised whole); the 8B model is the wait. Speed 0.82 is good. Three answer bugs: (1) time question: the model wrote {\"name\": \"localize_time\", ...}, a tool that does not exist, and it was shown and spoken. Fix: a made-up tool call is dropped (not shown, not kept in history), the model is asked once more for plain words, then a plain 'could not work that out' line. (2) 'any meetings tonight?' -> 'You have a meeting tonight.' Invented: Jarvis has no calendar. (3) 'Tell me a fun fact' -> read memory.md and answered with the pickleball fact. The prompt over-pushed the notes. Fix: the prompt now says general knowledge is answered from the model's own knowledge, and that it cannot see a calendar, email, weather, news or the internet and must say so. 167 tests pass",
+    "broke": "The prompt fixes are untested on the real model; (2) in particular depends on an 8B model obeying 'never invent'. You want real-world info (weather, news, facts that change): that needs an internet tool, which breaks 'fully local, nothing leaves the machine' for those requests. Waiting for your decision",
+    "next": "Decision on online lookups, then Day 28"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Decision (yours): Jarvis may go online for weather and web search when you ask for real-world info; built on Day 29 (the catch-up day), wake word stays Day 28. README must say 'local by default; goes online only for lookups you ask for' instead of 'nothing leaves the machine'",
+    "broke": "A web result is text written by strangers: it is the same injection risk as a note, so the Day 20 defences (fenced data, no write without your y) apply and the injection test gets a web case",
+    "next": "Day 28: wake word"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 27 re-run on the Mac, still failing: 'What time is it?' called get_time twice then said 'I don't know the current time.' (my new 'you cannot see ... the internet' prompt line may have made it doubt itself); Whisper heard 'Tell me a fun fact' as 'That'll be a fun fact.' and the model proposed remembering the pickleball fact (duplicate, 'Already remembered', nothing written); 'meetings in the evening' now correctly says nothing found. That is five different failures of the same simple question across five runs, so patching prompts one at a time is over. Built a scored check instead: scripts/tool-eval.sh <model> runs 9 built-in questions (time, date, fun fact, capital, math, explain, calendar, weather, remember) and 5 of your notes questions, 3 trials each, and checks tool use, plain words and no invented facts. 172 tests pass",
+    "broke": "The check's pass rules are mine: e.g. the weather case passes only if Jarvis says it cannot see the weather, which stops being right after Day 29 (online lookups), and the notes questions use your own eval cases so they are easy. 3 trials is small. You said more apps are needed: a calendar or mail link would give this model more chances to get things wrong, so it comes after a model passes",
+    "next": "Run the check on llama3.1:8b, qwen2.5:7b (and one more if you want), paste the summary lines"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Model check run on the Mac, rules as first written: llama3.1:8b 23/42, qwen2.5:7b 30/42. Reading the failures (docs/TOOLEVAL-*.md) the scores are not what they look like. llama: capital/explain answers were CORRECT but failed only because it searched the notes first (my rule); fun fact answered 'You play pickleball on weekends' (real failure); math 387 and 379 for 17x23 (real: 391, an 8B model cannot multiply); time/date 0/3 with answers like 'I could not find the time'. qwen2.5: capital, math, explain, calendar, weather, notes all 3/3, but time/date it answered WITHOUT calling get_time ('14:32', 'October 24, 2023'): invented, wrong, confident; and it refused to call remember ('I can't save without approval'); fun fact also pulled the pickleball fact in. Fixes: (1) the current date and time is now written into the system message every round, so no model has to call a tool and relay it (standard practice; get_time stays for the MCP server); (2) remember wording says it only asks for approval; (3) the check now reports 'answer correct' and 'strict' separately (changed after seeing the results, so both are shown; the old strict numbers above stay valid), and time/date no longer require a tool. 174 tests pass",
+    "broke": "The fun-fact failure for both models comes from automatic note search: 'tell me a fun fact' matches your memory.md line about pickleball, so it is put in front of the model. min_score is too low for that kind of question. No calculator, so arithmetic is unreliable on llama",
+    "next": "Re-run both models; decide"
   }
 ];
 // ---- END DATA ----

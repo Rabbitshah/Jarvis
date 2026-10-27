@@ -16,7 +16,8 @@ class ChatClient(Protocol):
 class Agent:
     def __init__(self, llm: ChatClient, registry: Registry, system_prompt: str,
                  max_rounds: int = 4, max_history: int = 40,
-                 context_fn: Callable[[str], Any] | None = None, proposals: Any = None) -> None:
+                 context_fn: Callable[[str], Any] | None = None, proposals: Any = None,
+                 clock: Callable[[], str] | None = None) -> None:
         self.llm = llm
         self.registry = registry
         self.system_prompt = system_prompt
@@ -24,6 +25,7 @@ class Agent:
         self.max_history = max_history
         self.context_fn = context_fn
         self.proposals = proposals  # facts waiting for the user's y/n
+        self.clock = clock  # returns the current date and time as words; told to the model every round
         self.messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
 
     def reset(self) -> None:
@@ -46,6 +48,18 @@ class Agent:
             return None
         args = obj.get("parameters", obj.get("arguments", {}))
         return {"function": {"name": obj["name"], "arguments": args if isinstance(args, dict) else {}}}
+
+    NUDGE = "Answer the question in one plain sentence, in words only, using the tool result above. No JSON."
+    FALLBACK = "Sorry, I could not work that out. Please ask again."
+
+    @staticmethod
+    def _tool_shaped(content: str) -> bool:
+        """{"name": ..., "parameters": ...} for a tool that does not exist (the model made it up)."""
+        try:
+            obj = json.loads(content.strip())
+        except json.JSONDecodeError:
+            return False
+        return isinstance(obj, dict) and "name" in obj and ("parameters" in obj or "arguments" in obj)
 
     ANSWER_KEYS = ("output", "answer", "response", "result", "value", "text", "message")
 
@@ -70,13 +84,17 @@ class Agent:
         turn = len(self.messages) - 1  # index of this turn's user message
         ctx = self.context_fn(user_text) if self.context_fn else None
         cited: list[str] = list(ctx.files) if ctx else []  # notes that reached the model this turn
-        offer_tools = True
+        offer_tools, nudged = True, False
         try:
             for _ in range(self.max_rounds):
                 content, calls, held = "", [], False
                 view = list(self.messages)
+                if self.clock:  # Day 27b: models failed to relay get_time, so the time is simply told to them
+                    view[0] = {"role": "system", "content": f"{self.system_prompt}\n\n{self.clock()}"}
                 if ctx:  # excerpts go to the model for THIS turn only; history keeps the plain question
                     view[turn] = {"role": "user", "content": f"{ctx.text}\n\nQuestion: {user_text}"}
+                if nudged:  # last try produced a made-up tool call; ask for words (not stored in history)
+                    view.append({"role": "user", "content": self.NUDGE})
                 for chunk in self.llm.chat_stream(view, self.registry.schemas() if offer_tools else None):
                     msg = chunk.get("message") or {}
                     text = msg.get("content")
@@ -91,6 +109,12 @@ class Agent:
                     rescued = self._text_tool_call(content)
                     if rescued:
                         calls, content = [rescued], ""
+                    elif self._tool_shaped(content):
+                        if not nudged:  # day 27: {"name": "localize_time", ...} for a tool that does not exist
+                            nudged, offer_tools = True, False
+                            continue  # the made-up call is not shown, not spoken, not kept
+                        content = self.FALLBACK
+                        yield {"type": "token", "text": content}
                     else:
                         content = self._unwrap_answer(content)
                         yield {"type": "token", "text": content}

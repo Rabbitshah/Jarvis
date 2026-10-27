@@ -51,3 +51,14 @@ def test_play_without_afplay(monkeypatch, tmp_path):
     monkeypatch.setattr(tts.shutil, "which", lambda n: None)
     assert tts.play_wav_bytes(b"x", tmp_path / "r.wav") is False
     assert not (tmp_path / "r.wav").exists()
+
+
+def test_speed_is_sent_to_piper():
+    seen = {}
+
+    def handler(req):
+        seen["body"] = req.read()
+        return httpx.Response(200, content=b"W")
+
+    tts.PiperClient("http://piper", "v", transport=httpx.MockTransport(handler), length_scale=0.8).synthesize("hi")
+    assert b'"length_scale":0.8' in seen["body"]

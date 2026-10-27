@@ -103,3 +103,28 @@ def test_tools_stay_on_after_list_notes_or_an_error(cfg):
                        [text_chunk("done")]])
     list(agent.chat("read something"))
     assert agent.llm.tools_offered == [True, True, True]  # list_notes keeps them on; the read_note error does too
+
+
+def test_made_up_tool_call_is_nudged_not_shown(cfg):
+    junk = '{"name": "localize_time", "parameters": {"time": "x"}}'
+    agent = make(cfg, [[tool_chunk("get_time", {})], [text_chunk(junk)], [text_chunk("It is noon.")]])
+    events = list(agent.chat("time?"))
+    tokens = [e["text"] for e in events if e["type"] == "token"]
+    assert tokens == ["It is noon."]
+    assert all("localize_time" not in str(m.get("content")) for m in agent.messages)  # not kept in history
+    assert agent.llm.calls[2][-1]["content"] == agent.NUDGE  # the retry asked for words
+
+
+def test_made_up_tool_call_twice_gives_plain_fallback(cfg):
+    junk = '{"name": "nope", "parameters": {}}'
+    agent = make(cfg, [[tool_chunk("get_time", {})], [text_chunk(junk)], [text_chunk(junk)]])
+    tokens = [e["text"] for e in agent.chat("time?") if e["type"] == "token"]
+    assert tokens == [agent.FALLBACK]
+
+
+def test_clock_line_is_told_to_the_model_each_round_but_not_stored(cfg):
+    llm = FakeLLM([[text_chunk("ok")]])
+    agent = Agent(llm, build_registry(cfg), "sys prompt", 4, 40, clock=lambda: "NOW IS NOON")
+    list(agent.chat("time?"))
+    assert llm.calls[0][0]["content"] == "sys prompt\n\nNOW IS NOON"
+    assert agent.messages[0]["content"] == "sys prompt"  # history keeps the plain prompt

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 from .agent import Agent
@@ -88,15 +89,21 @@ VOICE_PROMPT = ("\nYou are speaking out loud. Answer in at most two short senten
                 "No lists, no symbols, no markdown.")
 
 
+def clock_line() -> str:
+    now = datetime.now().astimezone()
+    return (f"Current local date and time: {now:%A, %d %B %Y}, {now:%I:%M %p} ({now.tzname()}). "
+            "Use this for any question about the time or date; no tool is needed for it.")
+
+
 def build_agent(cfg, extra_prompt: str = ""):
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
     proposals = Proposals(cfg, llm.embed)
     agent = Agent(llm, build_registry(cfg, llm.embed, proposals), cfg.system_prompt + extra_prompt, cfg.max_tool_rounds,
-                  cfg.max_history, make_context_fn(cfg, llm.embed), proposals)
+                  cfg.max_history, make_context_fn(cfg, llm.embed), proposals, clock=clock_line)
     return agent, proposals
 
 
-def run_turn(agent, proposals, text: str, on_reply=None) -> str:
+def run_turn(agent, proposals, text: str, on_reply=None, on_token=None) -> str:
     """Send one message, print the answer as it streams, then ask y/N for any proposed memory.
     on_reply(text) runs once the answer is complete (voice mode speaks it). Returns the answer."""
     print("jarvis> ", end="", flush=True)
@@ -105,6 +112,8 @@ def run_turn(agent, proposals, text: str, on_reply=None) -> str:
         if ev["type"] == "token":
             reply += ev["text"]
             print(ev["text"], end="", flush=True)
+            if on_token:
+                on_token(ev["text"])
         elif ev["type"] == "sources":
             consulted = ev["files"]
         elif ev["type"] == "tool_call":
@@ -151,38 +160,31 @@ def chat_loop() -> int:
 
 
 def make_speaker(cfg):
-    """Returns speak(text), or None if Piper is not running (replies then stay text only)."""
+    """Returns a function that builds a fresh StreamingSpeaker per answer, or None if Piper/afplay is missing."""
+    from jarvis.voice import speaker as speaker_mod
     from jarvis.voice import tts
 
-    piper = tts.PiperClient(cfg.tts_url, cfg.tts_voice)
+    piper = tts.PiperClient(cfg.tts_url, cfg.tts_voice, length_scale=cfg.tts_length_scale)
     if not piper.ping():
         print("Piper is not running, so replies will be text only. Start it with: bash scripts/piper-up.sh")
         return None
-    out = ROOT / ".tools" / "recordings" / "reply.wav"  # overwritten each time, never committed
-
-    def speak(text: str) -> None:
-        words = tts.speakable(text)
-        if not words:
-            return
-        try:
-            start = time.perf_counter()
-            wav = piper.synthesize(words)
-            took = time.perf_counter() - start
-        except tts.TtsError as exc:
-            print(f"  [voice] {exc}")
-            return
-        print(f"  (voice ready after {took:.2f} s)")
-        if not tts.play_wav_bytes(wav, out):
-            print("  [voice] afplay not found, cannot play audio")
-
-    return speak
+    player = tts.Player(ROOT / ".tools" / "recordings" / "reply.wav")  # overwritten each time, never committed
+    if not player.available():
+        print("afplay not found, so replies will be text only.")
+        return None
+    return lambda: speaker_mod.StreamingSpeaker(piper.synthesize, player.play, player.stop)
 
 
 def say_cmd(text: str) -> int:
-    speak = make_speaker(load_config())
-    if speak is None:
+    new_speaker = make_speaker(load_config())
+    if new_speaker is None:
         return 1
-    speak(text)
+    sp = new_speaker()
+    start = time.perf_counter()
+    sp.feed(text)
+    sp.finish()
+    if sp.first_sound_at:
+        print(f"  (first sound after {sp.first_sound_at - start:.2f} s, {len(sp.sentences)} sentence(s))")
     return 0
 
 
@@ -201,7 +203,7 @@ def voice_loop(speak_replies: bool = True) -> int:
         return 1
     print(f"Speech model ready in {load_s:.1f} s.")
     agent, proposals = build_agent(cfg, VOICE_PROMPT)
-    speak = make_speaker(cfg) if speak_replies else None
+    new_speaker = make_speaker(cfg) if speak_replies else None
     wav = ROOT / ".tools" / "recordings" / "last.wav"  # overwritten each time, never committed
     print(f"Jarvis voice ({cfg.model}). Press Enter to talk. Type text to type instead. /reset, /exit.")
     while True:
@@ -225,7 +227,25 @@ def voice_loop(speak_replies: bool = True) -> int:
             continue
         if not line:
             print(f"you said> {text}")
-        run_turn(agent, proposals, text, on_reply=speak)
+        t0 = time.perf_counter()  # your question is understood; from here we count to the first sound
+        sp = new_speaker() if new_speaker else None
+        marks: dict[str, float] = {}
+
+        def on_token(t: str) -> None:
+            marks.setdefault("first_token", time.perf_counter() - t0)
+            if sp:
+                sp.feed(t)
+
+        try:
+            run_turn(agent, proposals, text, on_token=on_token, on_reply=(lambda _r: sp.finish()) if sp else None)
+        except KeyboardInterrupt:
+            if sp:
+                sp.stop()
+            print("\n(stopped)")
+            continue
+        if sp and sp.first_sound_at:
+            print(f"  (first word after {marks.get('first_token', 0):.2f} s, first sound after "
+                  f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
 
 
 def main() -> None:
