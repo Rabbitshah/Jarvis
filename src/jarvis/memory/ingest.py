@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import fnmatch
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
@@ -38,6 +39,16 @@ def _skip(name: str, patterns: tuple[str, ...]) -> bool:
     return any(fnmatch.fnmatch(base, p) or fnmatch.fnmatch(name, p) for p in patterns)
 
 
+def indexable_text(name: str, text: str) -> str:
+    """What gets embedded. For memory.md only the saved facts: its title and 'Facts Jarvis was asked to
+    remember' line made 'tell me a fun fact' match it at 0.59 (Day 27b)."""
+    from .remember import MEMORY_FILE  # late import: remember.py imports this module
+    if name != MEMORY_FILE:
+        return text
+    facts = [re.sub(r"^-\s*\d{4}-\d{2}-\d{2}:\s*", "", ln.strip()) for ln in text.splitlines() if ln.strip().startswith("- ")]
+    return "\n\n".join(f for f in facts if f)
+
+
 def embed_text(file: str, chunk: str, header: bool = True, prefix: str = "") -> str:
     """The file name goes into the embedded text so a question naming a topic finds its note."""
     body = f"Note: {Path(file).stem}\n\n{chunk}" if header else chunk
@@ -58,7 +69,7 @@ def ingest(cfg: Config, embed: Embed, max_chars: int | None = None, full: bool =
         if _skip(name, cfg.ingest_exclude):
             result.skipped.append(name)
             continue
-        text = read_note(cfg.notes_dir, name)
+        text = indexable_text(name, read_note(cfg.notes_dir, name))
         chunks = chunk_text(text, max_chars)
         if chunks:
             plan[name] = (chunks, file_digest(cfg, max_chars, text))

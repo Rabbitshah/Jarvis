@@ -118,7 +118,7 @@ def test_agent_emits_confirm_event(c):
     props = Proposals(c, fake_embed)
     llm = FakeLLM([[tool_chunk("remember", {"fact": "I live in Vadodara"})], [text_chunk("I asked you to confirm.")]])
     agent = Agent(llm, build_registry(c, fake_embed, props), "sys", 4, 40, None, props)
-    events = list(agent.chat("remember I live in Vadodara"))
+    events = list(agent.chat("note that I live in Vadodara"))  # not a plain "remember ..." so the model path runs
     confirm = [e for e in events if e["type"] == "confirm"]
     assert len(confirm) == 1 and confirm[0]["fact"] == "I live in Vadodara"
     assert not (c.notes_dir / MEMORY_FILE).exists()   # still nothing written without y
@@ -137,3 +137,28 @@ def test_api_confirm_flow(c):
     assert r.status_code == 200 and "Saved" in r.json()["message"]
     assert "pickleball" in (c.notes_dir / MEMORY_FILE).read_text()
     assert client.post("/confirm", json={"session_id": "s1", "id": pid, "approve": True}).json()["message"].startswith("That proposal expired")
+
+
+def test_explicit_request_parsing():
+    from jarvis.memory.remember import explicit_request as e
+    assert e("Remember that I like green tea.") == "You like green tea"
+    assert e("please remember my favourite colour is green") == "Your favourite colour is green"
+    assert e("Hey, remember I'm allergic to nothing and I've said so") == "You're allergic to nothing and you've said so"
+    assert e("remember") is None and e("do you remember the capital of France?") is None
+    assert e("what do you remember about me") is None and e("I remember that day") is None
+    assert e("remember " + "x" * 400) is None  # too long for one fact
+
+
+def test_agent_proposes_without_the_model(cfg):
+    from conftest import FakeLLM
+    from jarvis.agent import Agent
+    from jarvis.memory.remember import Proposals
+    from jarvis.tools.builtin import build_registry
+    props = Proposals(cfg, None)
+    llm = FakeLLM([])  # the model must not be called at all
+    agent = Agent(llm, build_registry(cfg, None, props), "sys", 4, 40, proposals=props)
+    events = list(agent.chat("Remember that I like green tea."))
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "confirm", "token", "done"]
+    assert events[2]["fact"] == "You like green tea" and events[2]["from_context"] is False
+    assert llm.calls == [] and props.pending()[0].fact == "You like green tea"
+    assert not (cfg.notes_dir / "memory.md").exists()  # nothing saved until the user says yes

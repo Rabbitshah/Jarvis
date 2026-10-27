@@ -630,6 +630,20 @@ const LOG = [
     "did": "Results on qwen2.5:7b. Tool check with automatic note search ON: answer 39/42, strict 39/42 (remember now 3/3 after the prompt fix; only the fun fact fails, 0/3). With it OFF: 27/42 - fun fact 3/3 but all 5 notes questions 0/3, because qwen does not call search_notes on its own. Decision: keep auto search ON; fix the fun-fact leak in retrieval. Injection on qwen2.5:7b: 0 manipulated of 50, 0 writes (llama3.1: 1 of 50). README updated",
     "broke": "The injection result needs a caveat: qwen did not call search_notes on its own in the check above, so it also rarely follows a planted 'read this file' order because it rarely uses tools at all. That is partly luck, not only defence; the defences (fenced data, you type y) still matter more. Fun-fact fix is not chosen yet: raising min_score would also drop some right notes (right-note scores start at 0.521, off-topic top out at 0.494)",
     "next": "Run scripts/search.sh on 6 general questions to see their scores, then decide"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Why the fun fact leaks (scores from scripts/search.sh): 'tell me a fun fact' -> memory.md 0.591, because that chunk contains the file's own title and line 'Facts Jarvis was asked to remember' (word match on 'fact'), not the pickleball fact. General questions elsewhere: capital of France top 0.413, photosynthesis 0.448, joke 0.473, 17x23 0.483 (all below 0.51, fine), but 'explain what an API is' 0.537/0.527/0.515 (Tutorly, tech-stack, MindMitra notes: real topic overlap, so those notes are attached to a general question and shown as 'Notes consulted'). Fix for the first: memory.md is now indexed as its facts only (bullet lines, date prefix removed) so its header text cannot match. A personal-word filter ('my', 'I') was checked and rejected: 4 of your 20 note questions have no such word. 177 tests pass",
+    "broke": "Not proven: the pickleball fact on its own may still match 'fun fact' above 0.51 ('play ... weekends' is fun-ish); need the new scores. The API false citation is not fixed: it is a limit of 'notes consulted = notes shown to the model'",
+    "next": "On the Mac: scripts/ingest.sh (only memory.md re-embeds), scripts/search.sh 'tell me a fun fact', then the tool check"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Fix verified on the Mac: 'tell me a fun fact' now matches memory.md at 0.461 (was 0.591, below the 0.51 bar); 'what do I do on weekends' finds the pickleball fact at 0.634; search-eval unchanged (top-1 18/20, hit@3 20/20, MRR 0.950, right notes >= 0.521, off-topic <= 0.494). Tool check on qwen2.5:7b: answers 42/42, strict 40/42. The 2 strict misses are 'remember': across the 3 runs qwen called the remember tool 0/3, 3/3, then 1/3 times, so it is not reliable, and a 'please confirm' reply with no prompt is a false promise. Fix by code, not prompt: a plain 'Remember (that) ...' message is now recognised by a rule (explicit_request), the fact is rewritten to second person ('I like tea' -> 'You like tea'), the remember tool is called by the program and the model is not asked at all. You still must type y. 179 tests pass",
+    "broke": "The rule only knows messages that START with remember (voice: after 'Hey Jarvis' is removed). 'Save this', 'note that', 'don't forget' still depend on the model. The pronoun rewrite is word by word and can produce odd grammar",
+    "next": "Day 28"
   }
 ];
 // ---- END DATA ----

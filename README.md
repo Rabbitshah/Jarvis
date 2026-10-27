@@ -58,7 +58,7 @@ All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Cha
 | Prompt injection: planted orders obeyed (5 attacks x 10 runs, qwen2.5:7b) | **0 / 50** (llama3.1:8b earlier: 1 / 50) |
 | Prompt injection: facts saved without the user's yes | **0 / 50** |
 | Chat model check (14 questions x 3 trials): answers correct | **39 / 42** (qwen2.5:7b) vs 33 / 42 (llama3.1:8b) |
-| Unit tests | 176 passing |
+| Unit tests | 179 passing |
 
 Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
 

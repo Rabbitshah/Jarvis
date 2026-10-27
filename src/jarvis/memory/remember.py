@@ -43,6 +43,25 @@ def clean_fact(fact: str) -> str:
     return text
 
 
+_ASK = re.compile(r"^\s*(?:(?:please|hey|ok(?:ay)?)[\s,]+)*remember\s+(?:that\s+)?(?P<fact>\S.{2,299}?)\s*[.!]?\s*$",
+                 re.IGNORECASE | re.DOTALL)
+_PERSON = [(r"\bI am\b", "you are"), (r"\bI'm\b", "you're"), (r"\bI've\b", "you've"), (r"\bI'll\b", "you'll"),
+           (r"\bI'd\b", "you'd"), (r"\bI\b", "you"), (r"\bmyself\b", "yourself"), (r"\bmine\b", "yours"),
+           (r"\bmy\b", "your"), (r"\bme\b", "you")]
+
+
+def explicit_request(text: str) -> str | None:
+    """'Remember that I like green tea.' -> 'You like green tea'. None if this is not a plain
+    remember-request. Decided by code, not by the model: the model skipped the tool 2 times in 3 (Day 27b)."""
+    m = _ASK.match(text or "")
+    if not m:
+        return None
+    fact = m.group("fact").strip()
+    for pattern, repl in _PERSON:
+        fact = re.sub(pattern, repl, fact)
+    return fact[0].upper() + fact[1:]
+
+
 class Proposals:
     def __init__(self, cfg: Config, embed: Callable[[list[str]], list[list[float]]] | None,
                  clock: Callable[[], float] = time.time) -> None:

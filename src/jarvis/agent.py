@@ -6,6 +6,7 @@ import re
 from typing import Any, Callable, Iterator, Protocol
 
 from .llm import LLMError
+from .memory.remember import explicit_request
 from .tools.registry import Registry
 
 
@@ -78,10 +79,26 @@ class Agent:
                 return obj[key].strip()
         return content
 
+    def _propose_directly(self, fact: str) -> Iterator[dict]:
+        yield {"type": "tool_call", "name": "remember", "args": {"fact": fact}}
+        result = self.registry.call("remember", {"fact": fact})
+        yield {"type": "tool_result", "name": "remember", "result": result}
+        asked = self.proposals.take_new()
+        for p in asked:
+            yield {"type": "confirm", "id": p.id, "fact": p.fact, "from_context": False}  # the user's own words
+        reply = "Please confirm and I will remember that." if asked else result
+        self.messages.append({"role": "assistant", "content": reply})
+        yield {"type": "token", "text": reply}
+        yield {"type": "done"}
+
     def chat(self, user_text: str) -> Iterator[dict]:
         self.messages.append({"role": "user", "content": user_text})
         self._trim()
         turn = len(self.messages) - 1  # index of this turn's user message
+        fact = explicit_request(user_text) if self.proposals and "remember" in self.registry.names() else None
+        if fact:  # "remember that ..." is decided by code; the model only proposes it when it feels like it
+            yield from self._propose_directly(fact)
+            return
         ctx = self.context_fn(user_text) if self.context_fn else None
         cited: list[str] = list(ctx.files) if ctx else []  # notes that reached the model this turn
         offer_tools, nudged = True, False

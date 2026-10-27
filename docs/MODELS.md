@@ -45,6 +45,8 @@ Ask in the terminal chat: "What time is it?" Expect a `[tool] get_time` line, th
 
 Limits: 3 trials per question is small; I wrote the pass rules and changed the scoring once after seeing the first results (both numbers are shown). On the first version of the rules (before the clock was put in the prompt) qwen answered time and date without calling a tool and gave wrong values: it will invent facts when no tool is forced. Injection re-run on qwen2.5:7b (50 trials): 0 manipulated, 0 writes. Caution: qwen rarely calls tools on its own (see below), so some of that is the model doing little, not the defences doing much.
 
+**After the memory.md fix (Oct 27, evening): 42/42 answers correct, 40/42 strict, fun fact 3/3 (its top note score fell from 0.591 to 0.461).**
+
 **Automatic note search ON vs OFF (qwen2.5:7b, Oct 27):** ON: 39/42 (fails only the fun fact, 0/3, because `memory.md` is attached to "tell me a fun fact"). OFF: fun fact 3/3 but all 5 notes questions 0/3 (27/42): qwen never calls `search_notes` by itself, even though the prompt says to. So the automatic search stays ON; the fun-fact leak needs a retrieval fix, not a switch.
 
 ## Hardware

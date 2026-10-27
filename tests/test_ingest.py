@@ -87,3 +87,11 @@ def test_nothing_to_ingest(cfg, tmp_path):
         f.unlink()
     res = ingest(_cfg(cfg, tmp_path), fake_embed)
     assert res.chunks == 0 and res.stored_total == 0
+
+
+def test_memory_file_is_indexed_without_its_header():
+    from jarvis.memory.ingest import indexable_text
+    text = "# Memory\n\nFacts Jarvis was asked to remember. One per line.\n\n- 2026-10-25: You play pickleball on weekends\n- 2026-10-26: You like green tea\n"
+    assert indexable_text("memory.md", text) == "You play pickleball on weekends\n\nYou like green tea"
+    assert indexable_text("other.md", text) == text
+    assert indexable_text("memory.md", "# Memory\n\nnothing yet\n") == ""
