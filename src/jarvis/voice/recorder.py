@@ -69,11 +69,14 @@ def write_wav(path: Path, audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> 
 
 
 def record(path: Path, wait_for_enter: Callable[[], None], open_stream: Callable = open_microphone,
-           max_seconds: float = MAX_SECONDS, say: Callable[[str], None] = print) -> Recording:
-    """Enter starts, Enter stops (or max_seconds). Returns what was saved."""
+           max_seconds: float = MAX_SECONDS, say: Callable[[str], None] = print,
+           already_started: bool = False) -> Recording:
+    """Enter starts, Enter stops (or max_seconds). Returns what was saved.
+    already_started: the caller already waited for the start Enter."""
     blocks: list[np.ndarray] = []
-    say("Press Enter to start recording.")
-    wait_for_enter()
+    if not already_started:
+        say("Press Enter to start recording.")
+        wait_for_enter()
     stream = open_stream(lambda indata: blocks.append(np.array(indata, dtype=np.int16).reshape(-1)))
     stream.start()
     say(f"Recording... press Enter to stop (max {max_seconds:g} s).")

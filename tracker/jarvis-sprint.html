@@ -290,14 +290,14 @@ const DAYS = [
     "n": 24,
     "date": "2026-11-16",
     "task": "Whisper transcription; pick faster-whisper or mlx-whisper by measuring",
-    "done": "DONE (Oct 26) on the Mac. Chosen: mlx-whisper small (config [voice] stt). 3 clips, 0 wrong words with both small models; time per clip 0.07 s (mlx) vs 0.87 s (faster-whisper). Base models made mistakes (\"Rewind me\", \"Valladara\"). `scripts/transcribe.sh clip.wav` runs it. 140 tests",
+    "done": "DONE and pushed (verified on the Mac, Oct 27). Chosen: mlx-whisper small (config [voice] stt). 3 clips, 0 wrong words with both small models; time per clip 0.07 s (mlx) vs 0.87 s (faster-whisper). Base models made mistakes (\"Rewind me\", \"Valladara\"). `scripts/transcribe.sh clip.wav` runs it. 140 tests",
     "w": 5
   },
   {
     "n": 25,
     "date": "2026-11-17",
     "task": "Voice into the agent",
-    "done": "Spoken question gets a text answer",
+    "done": "Spoken question gets a text answer. Code done (Oct 27), 148 tests: `scripts/voice.sh` (Enter, speak, Enter -> transcript -> same agent as the text chat). NEEDS the Mac",
     "w": 5
   },
   {
@@ -539,6 +539,27 @@ const LOG = [
     "did": "Day 24 measured on the Mac (docs/STT.md), 3 clips with known text. Small models: 0 wrong words on all 3, for both engines. Base models: mlx base got 'Rewind me' and 'What time is it?' (dropped 'Hey Jarvis'), faster base 'Valladara' for Vadodara. Speed per clip: mlx small 0.07 s, faster small 0.87 s (12x). DECISION: mlx-whisper small, set in config [voice] stt (env JARVIS_STT overrides). Why: accuracy is tied, the speed gap is the only difference and it is added to every spoken turn. Installed by pyproject only on Apple Silicon; other machines get faster-whisper (use JARVIS_STT=faster:small). mlx-whisper accepts a numpy array (verified). Added `jarvis --transcribe` and scripts/transcribe.sh. 140 tests pass",
     "broke": "3 clips, one speaker, quiet room: this shows both small models are good, it does not rank them on accuracy. Load times in STT.md include the first model download (30-70 s), so they mean nothing; real load time is measured at startup in Day 25. mlx-whisper adds torch, numba, scipy to the install. The ROG laptop (Windows/NVIDIA) would use faster-whisper: untested. Ollama and mlx both use the Apple GPU; they run one after the other in a turn, memory impact not measured",
     "next": "Day 25: speak a question, Jarvis transcribes it and answers in text"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 24 verified and pushed (transcribe.sh works on the default install). Day 25 code: `jarvis --voice` / scripts/voice.sh. Enter, speak, Enter: the recording goes to .tools/recordings/last.wav (overwritten each time), Whisper loads once at startup (load time printed), the text is shown as 'you said>' and goes into the same agent as typed chat, so tools, notes search, sources and the y/N memory prompt all work. Typing text instead of pressing Enter also works. Silent or very quiet recordings are NOT sent to Whisper (it invents words from silence). Chat code split into build_agent/run_turn so both modes share it. 145 tests pass",
+    "broke": "Memory saving still needs a typed y: I did not allow a spoken yes, because a voice (or a noisy room, or a note read aloud) must not approve a write. Not tested with the real model on the Mac yet. Whisper can still hear background speech or a TV as a command",
+    "next": "Day 26: Piper speaks the reply"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 25 run on the Mac: transcribe 0.08-0.19 s, notes question answered with sources, remember asked y/N and n saved nothing, a too-quiet recording was refused with a hint. One failure: 'Hey Jarvis, what time is it?' called get_time but the answer said it has no access to the time. The name 'Jarvis' had pulled the two Jarvis project notes into the model's context ('Notes consulted: 06, 08') and the 8B model then ignored the tool result. Fix: the spoken wake phrase ('Hey Jarvis,') is cut from the start of the text before it goes to the agent (only at the start; 'Jarvis' alone is refused). 146 tests pass",
+    "broke": "This is a guess about the cause: I cannot run the model here. If 'what time is it' still fails after the fix, the model is the problem and the tool result needs a clearer format. Also seen: notes are attached to a plain time question whenever any word matches; the min_score gap is thin (known since Day 17)",
+    "next": "On the Mac: repeat 'Hey Jarvis, what time is it?'. If it fails, type 'what time is it' in scripts/run.sh to separate voice from model"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 25 bug found with the new debug script (scripts/debug-turn.sh shows what the model gets and says). The time tool worked and returned a clear sentence, but llama3.1 then wrote its final answer wrapped in JSON: {\"output\": \"Tuesday, 27 October 2026, 11:35 AM, local time.\"} (earlier run: {\"return\": \"datetime\", \"value\": ...}). Not a voice bug; text chat has the same problem. The earlier guess (Jarvis notes confusing the model) was only part of it. Fix: the agent unwraps a final answer that is only a small JSON object with one or two text values and a key like output/answer/value; other JSON is untouched; history keeps the clean text. 148 tests pass",
+    "broke": "The model also wrote a 24-hour time with seconds on the first run, so some of its output is invented around the tool result; I cannot explain that one. Unwrapping hides a model quirk, it does not remove it. Other shapes of wrapper may still appear",
+    "next": "Re-run voice.sh: 'Hey Jarvis, what time is it?'"
   }
 ];
 // ---- END DATA ----

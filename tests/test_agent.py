@@ -75,3 +75,18 @@ def test_json_that_is_not_a_tool_is_shown(cfg):
     events = list(agent.chat("json please"))
     assert events[0] == {"type": "token", "text": '{"hello": 1}'}
     assert events[-1] == {"type": "done"}
+
+
+def test_answer_wrapped_in_json_is_unwrapped(cfg):
+    for raw, want in [('{"output": "It is 11:35 AM."}', "It is 11:35 AM."),
+                      ('{"return": "datetime", "value": "11:33"}', "11:33")]:
+        agent = make(cfg, [[text_chunk(raw)]])
+        events = list(agent.chat("time?"))
+        assert events[0] == {"type": "token", "text": want}
+        assert agent.messages[-1]["content"] == want  # history is clean too
+
+
+def test_other_json_is_left_alone(cfg):
+    for raw in ['{"a": 1, "output": "x"}', '{"output": 5}', '{"x": "y"}', '{"output": "a", "b": "c", "d": "e"}']:
+        agent = make(cfg, [[text_chunk(raw)]])
+        assert list(agent.chat("json"))[0]["text"] == raw

@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from .agent import Agent
-from .config import load_config
+from .config import ROOT, load_config
 from .llm import LLMError, OllamaClient
 from .memory.context import make_context_fn
 from .memory.remember import Proposals
@@ -81,12 +81,45 @@ def search_cmd(query: str, k: int) -> int:
     return 0
 
 
-def chat_loop() -> int:
-    cfg = load_config()
+def build_agent(cfg):
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
     proposals = Proposals(cfg, llm.embed)
     agent = Agent(llm, build_registry(cfg, llm.embed, proposals), cfg.system_prompt, cfg.max_tool_rounds,
                   cfg.max_history, make_context_fn(cfg, llm.embed), proposals)
+    return agent, proposals
+
+
+def run_turn(agent, proposals, text: str) -> None:
+    """Send one message, print the answer as it streams, then ask y/N for any proposed memory."""
+    print("jarvis> ", end="", flush=True)
+    asked, consulted = [], []
+    for ev in agent.chat(text):
+        if ev["type"] == "token":
+            print(ev["text"], end="", flush=True)
+        elif ev["type"] == "sources":
+            consulted = ev["files"]
+        elif ev["type"] == "tool_call":
+            print(f"\n  [tool] {ev['name']}({ev['args']})\njarvis> ", end="", flush=True)
+        elif ev["type"] == "confirm":
+            asked.append(ev)
+        elif ev["type"] == "error":
+            print(f"\n  [error] {ev['message']}")
+    print()
+    if consulted:
+        print(f"  Notes consulted: {', '.join(consulted)}")
+    for ev in asked:  # only a typed "y" from you saves anything
+        if ev.get("from_context"):
+            print("  ! Notes were shown to the model this turn. Save only if this fact really came from you.")
+        try:
+            answer = input(f"  Save to memory? \"{ev['fact']}\"  [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = "n"
+        print("  " + (proposals.approve(ev["id"]) if answer in ("y", "yes") else proposals.reject(ev["id"])))
+
+
+def chat_loop() -> int:
+    cfg = load_config()
+    agent, proposals = build_agent(cfg)
     print(f"Jarvis ({cfg.model}). /reset clears memory, /exit quits.")
     while True:
         try:
@@ -102,71 +135,48 @@ def chat_loop() -> int:
             agent.reset()
             print("history cleared")
             continue
-        print("jarvis> ", end="", flush=True)
-        asked, consulted = [], []
-        for ev in agent.chat(text):
-            if ev["type"] == "token":
-                print(ev["text"], end="", flush=True)
-            elif ev["type"] == "sources":
-                consulted = ev["files"]
-            elif ev["type"] == "tool_call":
-                print(f"\n  [tool] {ev['name']}({ev['args']})\njarvis> ", end="", flush=True)
-            elif ev["type"] == "confirm":
-                asked.append(ev)
-            elif ev["type"] == "error":
-                print(f"\n  [error] {ev['message']}")
-        print()
-        if consulted:
-            print(f"  Notes consulted: {', '.join(consulted)}")
-        for ev in asked:  # only a typed "y" from you saves anything
-            if ev.get("from_context"):
-                print("  ! Notes were shown to the model this turn. Save only if this fact really came from you.")
-            try:
-                answer = input(f"  Save to memory? \"{ev['fact']}\"  [y/N] ").strip().lower()
-            except (EOFError, KeyboardInterrupt):
-                answer = "n"
-            print("  " + (proposals.approve(ev["id"]) if answer in ("y", "yes") else proposals.reject(ev["id"])))
+        run_turn(agent, proposals, text)
 
 
-def devices_cmd() -> int:
-    from jarvis.voice.recorder import RecorderError, list_input_devices
-    try:
-        print("\n".join(list_input_devices()) + "\n(* = default input)")
-    except RecorderError as exc:
-        print(f"error: {exc}")
-        return 1
-    return 0
-
-
-def transcribe_cmd(path: str) -> int:
+def voice_loop() -> int:
+    """Speak a question (Enter, talk, Enter); Jarvis answers in text. Typed text also works."""
     from jarvis.voice import stt
+    from jarvis.voice.listen import listen
+
     cfg = load_config()
     try:
         engine = stt.make(cfg.stt)
-        audio = stt.load_audio(Path(path).expanduser())
-        text, took = stt.timed(engine.transcribe, audio)
+        print(f"Loading speech model {engine.name} ...")
+        _, load_s = stt.timed(engine.load)
     except stt.SttError as exc:
         print(f"error: {exc}")
         return 1
-    print(f"{text}\n({engine.name}, {took:.2f} s for {len(audio) / stt.SAMPLE_RATE:.1f} s of audio, includes model load)")
-    return 0
-
-
-def record_cmd(path: str) -> int:
-    from jarvis.voice import recorder
-    out = Path(path).expanduser()
-    try:
-        rec = recorder.record(out, wait_for_enter=input)
-    except (recorder.RecorderError, EOFError, KeyboardInterrupt) as exc:
-        print(f"error: {exc or 'cancelled'}")
-        return 1
-    print(f"Saved {rec.path} ({rec.seconds:.1f} s, peak {rec.peak}/32767)")
-    hint = recorder.advice(rec)
-    if hint:
-        print(f"! {hint}")
-        return 1
-    print("Playing back..." if recorder.play(rec.path) else "afplay not found: open the file yourself.")
-    return 0
+    print(f"Speech model ready in {load_s:.1f} s.")
+    agent, proposals = build_agent(cfg)
+    wav = ROOT / ".tools" / "recordings" / "last.wav"  # overwritten each time, never committed
+    print(f"Jarvis voice ({cfg.model}). Press Enter to talk. Type text to type instead. /reset, /exit.")
+    while True:
+        try:
+            line = input("\nvoice> (Enter = talk) ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if line == "/exit":
+            return 0
+        if line == "/reset":
+            agent.reset()
+            print("history cleared")
+            continue
+        try:
+            text = line or listen(engine, wav, wait_for_enter=input, already_started=True)
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if not text:
+            continue
+        if not line:
+            print(f"you said> {text}")
+        run_turn(agent, proposals, text)
 
 
 def main() -> None:
@@ -178,8 +188,11 @@ def main() -> None:
     parser.add_argument("-k", type=int, default=3, help="how many results for --search")
     parser.add_argument("--record", metavar="WAV", help="record the microphone to a WAV file, play it back, exit")
     parser.add_argument("--transcribe", metavar="WAV", help="turn a WAV file into text with the configured Whisper, exit")
+    parser.add_argument("--voice", action="store_true", help="talk to Jarvis: speak, get a text answer")
     parser.add_argument("--devices", action="store_true", help="list microphones and exit")
     args = parser.parse_args()
+    if args.voice:
+        sys.exit(voice_loop())
     if args.transcribe:
         sys.exit(transcribe_cmd(args.transcribe))
     if args.devices:

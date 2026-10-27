@@ -47,6 +47,23 @@ class Agent:
         args = obj.get("parameters", obj.get("arguments", {}))
         return {"function": {"name": obj["name"], "arguments": args if isinstance(args, dict) else {}}}
 
+    ANSWER_KEYS = ("output", "answer", "response", "result", "value", "text", "message")
+
+    @classmethod
+    def _unwrap_answer(cls, content: str) -> str:
+        """llama3.1 sometimes wraps its final sentence in JSON, e.g. {"output": "It is 11:35 AM"}.
+        Seen on Day 25 and it would be read out loud. Unwrap only that small shape; other JSON stays."""
+        try:
+            obj = json.loads(content.strip())
+        except json.JSONDecodeError:
+            return content
+        if not (isinstance(obj, dict) and 1 <= len(obj) <= 2 and all(isinstance(v, str) for v in obj.values())):
+            return content
+        for key in cls.ANSWER_KEYS:
+            if key in obj and obj[key].strip():
+                return obj[key].strip()
+        return content
+
     def chat(self, user_text: str) -> Iterator[dict]:
         self.messages.append({"role": "user", "content": user_text})
         self._trim()
@@ -74,6 +91,7 @@ class Agent:
                     if rescued:
                         calls, content = [rescued], ""
                     else:
+                        content = self._unwrap_answer(content)
                         yield {"type": "token", "text": content}
 
                 assistant: dict[str, Any] = {"role": "assistant", "content": content}
