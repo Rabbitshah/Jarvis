@@ -90,3 +90,16 @@ def test_other_json_is_left_alone(cfg):
     for raw in ['{"a": 1, "output": "x"}', '{"output": 5}', '{"x": "y"}', '{"output": "a", "b": "c", "d": "e"}']:
         agent = make(cfg, [[text_chunk(raw)]])
         assert list(agent.chat("json"))[0]["text"] == raw
+
+
+def test_answer_round_after_a_tool_gets_no_tools(cfg):
+    agent = make(cfg, [[tool_chunk("get_time", {})], [text_chunk("noon")]])
+    list(agent.chat("time?"))
+    assert agent.llm.tools_offered == [True, False]
+
+
+def test_tools_stay_on_after_list_notes_or_an_error(cfg):
+    agent = make(cfg, [[tool_chunk("list_notes", {})], [tool_chunk("read_note", {"path": "nope.md"})],
+                       [text_chunk("done")]])
+    list(agent.chat("read something"))
+    assert agent.llm.tools_offered == [True, True, True]  # list_notes keeps them on; the read_note error does too

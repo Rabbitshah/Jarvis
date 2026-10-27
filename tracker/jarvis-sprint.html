@@ -297,14 +297,14 @@ const DAYS = [
     "n": 25,
     "date": "2026-11-17",
     "task": "Voice into the agent",
-    "done": "Spoken question gets a text answer. Code done (Oct 27), 148 tests: `scripts/voice.sh` (Enter, speak, Enter -> transcript -> same agent as the text chat). NEEDS the Mac",
+    "done": "DONE and pushed (Oct 27): spoken question gets a text answer; wake phrase stripped; JSON-wrapped answers unwrapped",
     "w": 5
   },
   {
     "n": 26,
     "date": "2026-11-18",
     "task": "Piper reply",
-    "done": "Reply is spoken",
+    "done": "DONE (Oct 27) on the Mac: Piper runs as its own server (GPL kept apart from MIT code), `scripts/say.sh` and voice mode speak replies; first synth 0.49 s, short lines 0.06-0.21 s. 157 tests. Fixed on the way: the answer round after a tool gets no tools, so the model stops answering in JSON",
     "w": 5
   },
   {
@@ -560,6 +560,27 @@ const LOG = [
     "did": "Day 25 bug found with the new debug script (scripts/debug-turn.sh shows what the model gets and says). The time tool worked and returned a clear sentence, but llama3.1 then wrote its final answer wrapped in JSON: {\"output\": \"Tuesday, 27 October 2026, 11:35 AM, local time.\"} (earlier run: {\"return\": \"datetime\", \"value\": ...}). Not a voice bug; text chat has the same problem. The earlier guess (Jarvis notes confusing the model) was only part of it. Fix: the agent unwraps a final answer that is only a small JSON object with one or two text values and a key like output/answer/value; other JSON is untouched; history keeps the clean text. 148 tests pass",
     "broke": "The model also wrote a 24-hour time with seconds on the first run, so some of its output is invented around the tool result; I cannot explain that one. Unwrapping hides a model quirk, it does not remove it. Other shapes of wrapper may still appear",
     "next": "Re-run voice.sh: 'Hey Jarvis, what time is it?'"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 25 verified: after the unwrap fix the time answer was right (12:15 PM) but the model also wrote paragraphs about its own steps ('The tool call returns...'). Day 26 code: Piper (piper-tts 1.8.0 per its setup.py) installs into its own folder .tools/piper-venv and runs as a local HTTP server on 127.0.0.1:5500 (scripts/piper-up.sh, voice en_US-lessac-medium into models/piper; scripts/stop.sh stops it too). Jarvis only talks to it over HTTP (voice/tts.py), never imports it, because Piper is GPL-3.0-or-later and Jarvis is MIT. Voice mode now speaks each reply (afplay), cleans markdown/links out first, caps spoken text at 500 characters, tells the model to answer in at most two short sentences, and the main prompt now says never to describe its own steps. If Piper is down, voice mode still works in text. `scripts/say.sh \"text\"` tests the voice alone. 155 tests pass",
+    "broke": "Not run: no Piper here and I could not reach PyPI/Hugging Face pages, so the voice name, the http_server flags (--data-dir, --host, --port), the /synthesize and /voices endpoints are from the project docs via Context7, not tested. The licence of the lessac voice data is NOT checked: check the voice's model card before the README claims anything. Whether the prompt change stops the rambling is unknown until you try. Spoken replies are only played after the whole answer is done; sentence-by-sentence comes on Day 27",
+    "next": "On the Mac: bash scripts/say.sh 'Hello, I am Jarvis', then bash scripts/voice.sh"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 26 on the Mac: Piper installed (14 packages, 1m16s), voice downloaded, `say.sh` spoke; synth time 0.49 s first call, 0.16 s later for a short line. Bug: for 'what time is it' the model answered {\"status\": \"OK\", \"time\": \"2026-10-27T15:03:00\", \"utc_offset\": \"+00:00\"} and Piper read it out. A third JSON shape (so unwrapping alone is whack-a-mole), and it invented utc_offset (your zone is +05:30). Likely cause: llama3.1's tool prompt pushes JSON replies while tools are still offered. Fix: the round that follows a tool call gets NO tools, so the model can only write words; tools stay on only after list_notes (needs read_note next) or an error. 157 tests pass",
+    "broke": "Hypothesis, not proven: I cannot run the model here. Cost: after search_notes the model cannot chain another tool in the same turn (the prompt already says to answer from the excerpts). Unwrap code stays as a second safety net",
+    "next": "On the Mac: scripts/debug-turn.sh 'what time is it' (round 2 should print words), then scripts/voice.sh"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 26 verified on the Mac. debug-turn: round 2 (no tools) still printed a text tool call once, the existing rescue ran get_time again, and round 3 gave words. voice.sh: 'What time is it?' -> 'It is 15:09 on Tuesday, 27 October 2026.' (correct, spoken, voice ready in 0.06 s); grad-school question answered from notes with sources, spoken, 0.21 s. Added models/piper/ to .gitignore (the voice file is about 60 MB and was not ignored)",
+    "broke": "The model still tries one extra tool call on the time question; the program copes but it costs one more model round. The grad-school question made the model pass k as the string '10' again (handled). Notes consulted listed 4 notes for one answer; most of the answer is from 05 only",
+    "next": "Day 27: speak sentence by sentence, measure time from end of your question to first sound"
   }
 ];
 // ---- END DATA ----

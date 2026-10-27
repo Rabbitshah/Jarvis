@@ -32,6 +32,8 @@ class Config:
     memory_doc_prefix: str
     memory_query_prefix: str
     stt: str
+    tts_url: str
+    tts_voice: str
     api_host: str
     api_port: int
 
@@ -72,6 +74,8 @@ def load_config(path: str | Path | None = None) -> Config:
         memory_doc_prefix=str(memory.get("doc_prefix", "")),
         memory_query_prefix=str(memory.get("query_prefix", "")),
         stt=os.environ.get("JARVIS_STT") or voice.get("stt", "faster:small"),
+        tts_url=os.environ.get("JARVIS_TTS_URL") or voice.get("tts_url", "http://127.0.0.1:5500"),
+        tts_voice=voice.get("tts_voice", "en_US-lessac-medium"),
         api_host=api["host"],
         api_port=int(api["port"]),
     )

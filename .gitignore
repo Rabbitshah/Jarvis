@@ -3,6 +3,7 @@
 .tools/
 models/ollama/
 models/hf/
+models/piper/
 models/*.log
 data/
 __pycache__/

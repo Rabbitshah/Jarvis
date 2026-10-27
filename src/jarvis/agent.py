@@ -70,13 +70,14 @@ class Agent:
         turn = len(self.messages) - 1  # index of this turn's user message
         ctx = self.context_fn(user_text) if self.context_fn else None
         cited: list[str] = list(ctx.files) if ctx else []  # notes that reached the model this turn
+        offer_tools = True
         try:
             for _ in range(self.max_rounds):
                 content, calls, held = "", [], False
                 view = list(self.messages)
                 if ctx:  # excerpts go to the model for THIS turn only; history keeps the plain question
                     view[turn] = {"role": "user", "content": f"{ctx.text}\n\nQuestion: {user_text}"}
-                for chunk in self.llm.chat_stream(view, self.registry.schemas()):
+                for chunk in self.llm.chat_stream(view, self.registry.schemas() if offer_tools else None):
                     msg = chunk.get("message") or {}
                     text = msg.get("content")
                     if text:
@@ -104,6 +105,7 @@ class Agent:
                     yield {"type": "done"}
                     return
 
+                offer_tools = False  # see below: the answer round gets no tools unless the model must go on
                 for call in calls:
                     fn = call.get("function") or {}
                     name, args = fn.get("name", ""), fn.get("arguments") or {}
@@ -111,6 +113,11 @@ class Agent:
                     result = self.registry.call(name, args)
                     self.messages.append({"role": "tool", "tool_name": name, "content": result})
                     yield {"type": "tool_result", "name": name, "result": result}
+                    # Day 25-26: with tools still on offer llama3.1 answers in JSON ({"status": "OK", ...}) and
+                    # invents fields. So after a tool ran, the next round has no tools, except when the model
+                    # has to go on: list_notes (then read_note) or an error (it may retry).
+                    if name == "list_notes" or result.startswith("error"):
+                        offer_tools = True
                     if name == "search_notes" and result.startswith("Note excerpts"):
                         for f in re.findall(r"^\d+\. (.+?) \(match", result, re.MULTILINE):
                             if f not in cited:

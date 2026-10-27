@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from .agent import Agent
@@ -38,6 +39,8 @@ def doctor() -> int:
     else:
         print("ollama           : NOT reachable (run scripts/run.sh)")
         ok = False
+    from jarvis.voice.tts import PiperClient
+    print(f"piper (optional) : {'reachable' if PiperClient(cfg.tts_url, cfg.tts_voice).ping() else 'not running (bash scripts/piper-up.sh)'}")
     print(f"notes folder     : {cfg.notes_dir} ({'ok' if cfg.notes_dir.is_dir() else 'missing'})")
     print(f"tools            : {', '.join(build_registry(cfg).names())}")
     return 0 if ok else 1
@@ -81,20 +84,26 @@ def search_cmd(query: str, k: int) -> int:
     return 0
 
 
-def build_agent(cfg):
+VOICE_PROMPT = ("\nYou are speaking out loud. Answer in at most two short sentences, in plain words. "
+                "No lists, no symbols, no markdown.")
+
+
+def build_agent(cfg, extra_prompt: str = ""):
     llm = OllamaClient(cfg.ollama_url, cfg.model, cfg.timeout_seconds, cfg.embed_model)
     proposals = Proposals(cfg, llm.embed)
-    agent = Agent(llm, build_registry(cfg, llm.embed, proposals), cfg.system_prompt, cfg.max_tool_rounds,
+    agent = Agent(llm, build_registry(cfg, llm.embed, proposals), cfg.system_prompt + extra_prompt, cfg.max_tool_rounds,
                   cfg.max_history, make_context_fn(cfg, llm.embed), proposals)
     return agent, proposals
 
 
-def run_turn(agent, proposals, text: str) -> None:
-    """Send one message, print the answer as it streams, then ask y/N for any proposed memory."""
+def run_turn(agent, proposals, text: str, on_reply=None) -> str:
+    """Send one message, print the answer as it streams, then ask y/N for any proposed memory.
+    on_reply(text) runs once the answer is complete (voice mode speaks it). Returns the answer."""
     print("jarvis> ", end="", flush=True)
-    asked, consulted = [], []
+    asked, consulted, reply = [], [], ""
     for ev in agent.chat(text):
         if ev["type"] == "token":
+            reply += ev["text"]
             print(ev["text"], end="", flush=True)
         elif ev["type"] == "sources":
             consulted = ev["files"]
@@ -107,6 +116,8 @@ def run_turn(agent, proposals, text: str) -> None:
     print()
     if consulted:
         print(f"  Notes consulted: {', '.join(consulted)}")
+    if on_reply and reply.strip():
+        on_reply(reply)
     for ev in asked:  # only a typed "y" from you saves anything
         if ev.get("from_context"):
             print("  ! Notes were shown to the model this turn. Save only if this fact really came from you.")
@@ -115,6 +126,7 @@ def run_turn(agent, proposals, text: str) -> None:
         except (EOFError, KeyboardInterrupt):
             answer = "n"
         print("  " + (proposals.approve(ev["id"]) if answer in ("y", "yes") else proposals.reject(ev["id"])))
+    return reply
 
 
 def chat_loop() -> int:
@@ -138,8 +150,44 @@ def chat_loop() -> int:
         run_turn(agent, proposals, text)
 
 
-def voice_loop() -> int:
-    """Speak a question (Enter, talk, Enter); Jarvis answers in text. Typed text also works."""
+def make_speaker(cfg):
+    """Returns speak(text), or None if Piper is not running (replies then stay text only)."""
+    from jarvis.voice import tts
+
+    piper = tts.PiperClient(cfg.tts_url, cfg.tts_voice)
+    if not piper.ping():
+        print("Piper is not running, so replies will be text only. Start it with: bash scripts/piper-up.sh")
+        return None
+    out = ROOT / ".tools" / "recordings" / "reply.wav"  # overwritten each time, never committed
+
+    def speak(text: str) -> None:
+        words = tts.speakable(text)
+        if not words:
+            return
+        try:
+            start = time.perf_counter()
+            wav = piper.synthesize(words)
+            took = time.perf_counter() - start
+        except tts.TtsError as exc:
+            print(f"  [voice] {exc}")
+            return
+        print(f"  (voice ready after {took:.2f} s)")
+        if not tts.play_wav_bytes(wav, out):
+            print("  [voice] afplay not found, cannot play audio")
+
+    return speak
+
+
+def say_cmd(text: str) -> int:
+    speak = make_speaker(load_config())
+    if speak is None:
+        return 1
+    speak(text)
+    return 0
+
+
+def voice_loop(speak_replies: bool = True) -> int:
+    """Speak a question (Enter, talk, Enter); Jarvis answers in text and out loud. Typed text also works."""
     from jarvis.voice import stt
     from jarvis.voice.listen import listen
 
@@ -152,7 +200,8 @@ def voice_loop() -> int:
         print(f"error: {exc}")
         return 1
     print(f"Speech model ready in {load_s:.1f} s.")
-    agent, proposals = build_agent(cfg)
+    agent, proposals = build_agent(cfg, VOICE_PROMPT)
+    speak = make_speaker(cfg) if speak_replies else None
     wav = ROOT / ".tools" / "recordings" / "last.wav"  # overwritten each time, never committed
     print(f"Jarvis voice ({cfg.model}). Press Enter to talk. Type text to type instead. /reset, /exit.")
     while True:
@@ -176,7 +225,7 @@ def voice_loop() -> int:
             continue
         if not line:
             print(f"you said> {text}")
-        run_turn(agent, proposals, text)
+        run_turn(agent, proposals, text, on_reply=speak)
 
 
 def main() -> None:
@@ -189,10 +238,14 @@ def main() -> None:
     parser.add_argument("--record", metavar="WAV", help="record the microphone to a WAV file, play it back, exit")
     parser.add_argument("--transcribe", metavar="WAV", help="turn a WAV file into text with the configured Whisper, exit")
     parser.add_argument("--voice", action="store_true", help="talk to Jarvis: speak, get a text answer")
+    parser.add_argument("--no-speak", action="store_true", help="with --voice: do not read replies out loud")
+    parser.add_argument("--say", metavar="TEXT", help="speak TEXT with Piper and exit")
     parser.add_argument("--devices", action="store_true", help="list microphones and exit")
     args = parser.parse_args()
     if args.voice:
-        sys.exit(voice_loop())
+        sys.exit(voice_loop(not args.no_speak))
+    if args.say:
+        sys.exit(say_cmd(args.say))
     if args.transcribe:
         sys.exit(transcribe_cmd(args.transcribe))
     if args.devices:

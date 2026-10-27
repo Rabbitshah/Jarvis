@@ -49,8 +49,8 @@ Needs about 20 real notes in notes/ before Nov 3.
 | --- | --- | --- | --- |
 | 23 | Sun Nov 15 | Push-to-talk recording to WAV (Enter starts, Enter stops) | DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back |
 | 24 | Mon Nov 16 | Whisper transcription; pick faster-whisper or mlx-whisper by measuring | DONE and pushed (verified on the Mac, Oct 27). Chosen: mlx-whisper small (config [voice] stt). 3 clips, 0 wrong words with both small models; time per clip 0.07 s (mlx) vs 0.87 s (faster-whisper). Base models made mistakes ("Rewind me", "Valladara"). `scripts/transcribe.sh clip.wav` runs it. 140 tests |
-| 25 | Tue Nov 17 | Voice into the agent | Spoken question gets a text answer. Code done (Oct 27), 148 tests: `scripts/voice.sh` (Enter, speak, Enter -> transcript -> same agent as the text chat). NEEDS the Mac |
-| 26 | Wed Nov 18 | Piper reply | Reply is spoken |
+| 25 | Tue Nov 17 | Voice into the agent | DONE and pushed (Oct 27): spoken question gets a text answer; wake phrase stripped; JSON-wrapped answers unwrapped |
+| 26 | Wed Nov 18 | Piper reply | DONE (Oct 27) on the Mac: Piper runs as its own server (GPL kept apart from MIT code), `scripts/say.sh` and voice mode speak replies; first synth 0.49 s, short lines 0.06-0.21 s. 157 tests. Fixed on the way: the answer round after a tool gets no tools, so the model stops answering in JSON |
 | 27 | Thu Nov 19 | Speak sentence by sentence; measure time to first audio | Number is in the README |
 | 28 | Fri Nov 20 | Wake word (openwakeword, check the "hey jarvis" model exists first) starts the same recording; push-to-talk stays | Saying the phrase starts listening |
 | 29 | Sat Nov 21 | Catch-up. SRT export only if time is left (cuttable) | n/a |

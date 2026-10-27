@@ -22,6 +22,8 @@ Other commands:
 | `scripts/test.sh` | unit tests (no model needed) |
 | `scripts/doctor.sh` | checks Ollama, both models, vector size and the notes folder |
 | `scripts/mcp-smoke.sh` | starts the MCP server and calls each tool once |
+| `scripts/voice.sh` | talk to Jarvis: Enter, speak, Enter; it answers in text and out loud |
+| `scripts/piper-up.sh` / `scripts/say.sh "text"` | install and start the local Piper voice / say something with it |
 | `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones |
 | `scripts/search-eval.sh` | checks that test questions find the right note |
 | `scripts/tune.sh` | compares chunk sizes and embedding settings, writes `docs/TUNING.md` |

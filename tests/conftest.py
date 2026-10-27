@@ -40,9 +40,11 @@ class FakeLLM:
     def __init__(self, rounds):
         self.rounds = list(rounds)
         self.calls = []
+        self.tools_offered = []  # per round: were tools sent?
 
     def chat_stream(self, messages, tools=None):
         self.calls.append([dict(m) for m in messages])
+        self.tools_offered.append(bool(tools))
         yield from self.rounds.pop(0)
 
     def ping(self):
