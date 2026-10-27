@@ -53,22 +53,24 @@ Needs about 20 real notes in notes/ before Nov 3.
 | 26 | Wed Nov 18 | Piper reply | DONE (Oct 27) on the Mac: Piper runs as its own server (GPL kept apart from MIT code), `scripts/say.sh` and voice mode speak replies; first synth 0.49 s, short lines 0.06-0.21 s. 157 tests. Fixed on the way: the answer round after a tool gets no tools, so the model stops answering in JSON |
 | 27 | Thu Nov 19 | Speak sentence by sentence; measure time to first audio | DONE (Oct 27) on the Mac, 167 tests. First sound 1.65-3.3 s after the question is understood, almost all of it model time (first word 1.5-3.2 s); Piper adds 0.02-0.2 s. Speed 0.82 approved. Bugs found: made-up tool call spoken, invented meeting, notes used for a general question |
 | 27b | (inserted Oct 27) | Model reliability check | DONE (Oct 27). qwen2.5:7b chosen (answers 42/42, strict 40/42 vs llama3.1:8b 33/42, 27/42). Time/date now in the system message; memory.md indexed as facts only; 'remember ...' decided by code. Injection 0/50 on qwen. Details: docs/MODELS.md, docs/TOOLEVAL-*.md |
-| 28 | Fri Nov 20 | Wake word (openwakeword, check the "hey jarvis" model exists first) starts the same recording; push-to-talk stays | Saying the phrase starts listening |
-| 29 | Sat Nov 21 | Online lookups (decided Oct 27): `weather` tool (Open-Meteo, free, no key) and `web_search` tool (free, no key). Rules: only when you ask for live info; the terminal shows exactly which words go online; nothing from your notes is ever put in a query; results are fenced as untrusted text like note excerpts; a failed lookup says so instead of guessing. SRT only if time is left | Weather and one news-type question answered with the source named; offline still works |
+| 28 | Fri Nov 20 | Wake word (openwakeword, check the "hey jarvis" model exists first) starts the same recording; push-to-talk stays | Saying the phrase starts listening | CODE DONE (Oct 27), needs Mac check: `scripts/wake-test.sh` then `scripts/listen.sh`. Hands-free: wake word, speak, pause (loudness-based end of speech), answer spoken; Enter still works.
+| 29 | Thu Oct 29 | Day 28 closed: wake word FROZEN at threshold 0.35 (no more tuning). Known limits go in the README | Day 28 pushed |
 
-## Week 6 (Nov 22-28): Ship
+## Final stretch (decided Oct 28): finish and prove, no new features
+Out of scope, on purpose: online lookups (weather, web search), calendar or mail links, calculator, more apps, more voice tuning. Reason: the repo already shows an agent loop, tools, RAG with measured eval, injection testing, MCP server and a voice pipeline. More tools add risk and no new resume signal. What is missing is proof and polish.
+
 | Day | Date | Task | Done when |
 | --- | --- | --- | --- |
-| 30 | Sun Nov 22 | Minimal React chat page (cuttable) | Streams a reply in the browser |
-| 31 | Mon Nov 23 | Show tool calls and sources (cuttable) | Source filename is visible |
-| 32 | Tue Nov 24 | Diagram and README draft | Diagram shows on GitHub |
-| 33 | Wed Nov 25 | Clean install from the README in a new folder | No undocumented steps |
-| 34 | Thu Nov 26 | 2 minute demo video | Recorded |
-| 35 | Fri Nov 27 | Someone else runs it from the README; tag v0.1 | They get a working reply |
-| 36 | Sat Nov 28 | Spare day | n/a |
+| 30 | Fri Oct 30 | One results table at the top of the README (retrieval top-1/MRR, tool check, injection 0/50, voice latency) and an architecture diagram | Table and diagram render on GitHub |
+| 31 | Sat Oct 31 | Honest limits section (Whisper mishears, wake word misses and false triggers, 8B model limits, no calendar or internet) and fix README wording ("local, no cloud") | A reader knows what does NOT work |
+| 32 | Sun Nov 1 | Clean install in a new folder from the README (clean-clone-test.sh) | No undocumented steps |
+| 33 | Mon Nov 2 | 2 minute demo video (voice question, notes answer with sources, remember with typed y) | Recorded, linked in README |
+| 34 | Tue Nov 3 | Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1 | Bullets written, tag pushed |
+| 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply |
+| 36 | Thu Nov 5 | OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped) | Streams a reply in the browser |
 
-Nov 29 to Dec 4 is buffer. Deadline: Fri Dec 4.
+Everything after Nov 5 is buffer. Deadline: Fri Dec 4.
 
 ## Cut order if 2 or more days behind
 1. SRT export  2. UI source panel  3. React UI  4. Incremental ingest  5. Injection test.
-Never cut: tools, MCP, Qdrant with eval numbers, README.
+Never cut: tools, MCP, Qdrant with eval numbers, README, demo video.

@@ -2,7 +2,7 @@
 
 A personal AI assistant that runs **fully on your own machine**: a local LLM (Ollama), tools it can call, search over your own notes, a local MCP server, and a "remember this" feature that never saves without your yes. Free, no cloud, nothing leaves the laptop.
 
-> Status: terminal chat, tools, note memory, MCP server and a streaming API are built and tested on a MacBook (Apple Silicon). Voice (push-to-talk, wake word, Piper) is next. See `docs/PLAN.md`.
+> Status: terminal chat, tools, note memory, MCP server and a streaming API are built and tested on a MacBook (Apple Silicon). Voice (push-to-talk, wake word, Piper) is built; the rest of the sprint is proof and polish. See `docs/PLAN.md`.
 
 ## Quick start (macOS, Apple Silicon)
 
@@ -23,6 +23,7 @@ Other commands:
 | `scripts/doctor.sh` | checks Ollama, both models, vector size and the notes folder |
 | `scripts/mcp-smoke.sh` | starts the MCP server and calls each tool once |
 | `scripts/voice.sh` | talk to Jarvis: Enter, speak, Enter; it answers in text and out loud |
+| `scripts/wake-test.sh` / `scripts/listen.sh` | live "Hey Jarvis" scores to tune the wake word / hands-free mode: say "Hey Jarvis" (or press Enter), ask, pause |
 | `scripts/piper-up.sh` / `scripts/say.sh "text"` | install and start the local Piper voice / say something with it |
 | `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones |
 | `scripts/search-eval.sh` | checks that test questions find the right note |
@@ -43,7 +44,8 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | Private notes the model can never see | built, unit-tested |
 | `remember`: Jarvis proposes a fact, you type y/N, it is saved to `notes/memory.md` and indexed | built, verified on the Mac |
 | Local MCP server with the same tools (except `remember`, which needs a human to approve) | built, verified in the MCP Inspector |
-| Voice: push-to-talk, Whisper, Piper, then a wake word | planned (week 5) |
+| Voice: push-to-talk, Whisper (mlx), Piper, sentence-by-sentence speech | built, verified on the Mac |
+| Wake word "Hey Jarvis" (openWakeWord, runs locally; audio before the phrase is never stored) | built, needs Mac check |
 | Small web page | planned, cuttable |
 
 ## Measured results
@@ -58,7 +60,7 @@ All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Cha
 | Prompt injection: planted orders obeyed (5 attacks x 10 runs, qwen2.5:7b) | **0 / 50** (llama3.1:8b earlier: 1 / 50) |
 | Prompt injection: facts saved without the user's yes | **0 / 50** |
 | Chat model check (14 questions x 3 trials): answers correct | **39 / 42** (qwen2.5:7b) vs 33 / 42 (llama3.1:8b) |
-| Unit tests | 179 passing |
+| Unit tests | 191 passing |
 
 Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
 
@@ -116,4 +118,4 @@ All of the heavy folders and your notes are git-ignored.
 
 ## License
 
-MIT, see `LICENSE`. The models are not part of this repo and have their own licenses (for example the Llama 3.1 community license). Check them before redistributing anything that includes the weights.
+MIT, see `LICENSE`. The wake word code (openWakeWord) is Apache-2.0, but its pretrained "hey jarvis" model is CC BY-NC-SA 4.0: non-commercial use only. Piper (GPL-3.0) runs as a separate local server and is not imported. The models are not part of this repo and have their own licenses (for example the Llama 3.1 community license). Check them before redistributing anything that includes the weights.

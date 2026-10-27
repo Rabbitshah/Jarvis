@@ -227,25 +227,120 @@ def voice_loop(speak_replies: bool = True) -> int:
             continue
         if not line:
             print(f"you said> {text}")
-        t0 = time.perf_counter()  # your question is understood; from here we count to the first sound
-        sp = new_speaker() if new_speaker else None
-        marks: dict[str, float] = {}
+        answer_aloud(agent, proposals, new_speaker, text)
 
-        def on_token(t: str) -> None:
-            marks.setdefault("first_token", time.perf_counter() - t0)
-            if sp:
-                sp.feed(t)
 
-        try:
-            run_turn(agent, proposals, text, on_token=on_token, on_reply=(lambda _r: sp.finish()) if sp else None)
-        except KeyboardInterrupt:
-            if sp:
-                sp.stop()
-            print("\n(stopped)")
-            continue
-        if sp and sp.first_sound_at:
-            print(f"  (first word after {marks.get('first_token', 0):.2f} s, first sound after "
-                  f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
+def answer_aloud(agent, proposals, new_speaker, text: str) -> None:
+    """Run one question through the agent, speak the answer as it is written, print the timings."""
+    t0 = time.perf_counter()  # your question is understood; from here we count to the first sound
+    sp = new_speaker() if new_speaker else None
+    marks: dict[str, float] = {}
+
+    def on_token(t: str) -> None:
+        marks.setdefault("first_token", time.perf_counter() - t0)
+        if sp:
+            sp.feed(t)
+
+    try:
+        run_turn(agent, proposals, text, on_token=on_token, on_reply=(lambda _r: sp.finish()) if sp else None)
+    except KeyboardInterrupt:
+        if sp:
+            sp.stop()
+        print("\n(stopped)")
+        return
+    if sp and sp.first_sound_at:
+        print(f"  (first word after {marks.get('first_token', 0):.2f} s, first sound after "
+              f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
+
+
+def wake_test_cmd() -> int:
+    """Live wake word scores, to try 'Hey Jarvis' and to count false triggers. Ctrl+C prints a summary."""
+    from jarvis.voice import recorder, wake
+    from jarvis.voice.handsfree import MicFrames
+
+    cfg = load_config()
+    started = time.time()
+    try:
+        ww = wake.WakeWord(wake.load_predictor(), cfg.wake_threshold)
+        started, hits, peak, window = time.time(), 0, 0.0, []
+        print(f"Say 'Hey Jarvis'. Threshold {cfg.wake_threshold}. A line shows the best score each second. Ctrl+C = summary.")
+        with MicFrames() as frames:
+            while True:
+                frame = frames.get()
+                if frame is None or frame.size != wake.FRAME:
+                    continue
+                hit = ww.process(frame)
+                window.append(ww.last_score)
+                peak = max(peak, ww.last_score)
+                if hit:
+                    hits += 1
+                    print(f"\n>>> DETECTED 'Hey Jarvis' (score {ww.last_score:.2f})")
+                if len(window) >= 12:
+                    best = max(window)
+                    print(f"\r  score {best:4.2f} {'#' * int(best * 40):<40}", end="", flush=True)
+                    window = []
+    except (wake.WakeError, recorder.RecorderError) as exc:
+        print(f"error: {exc}")
+        return 1
+    except KeyboardInterrupt:
+        minutes = (time.time() - started) / 60
+        print(f"\n\n{hits} detection(s) in {minutes:.1f} min; highest score {peak:.2f}.")
+        return 0
+
+
+def listen_loop(speak_replies: bool = True) -> int:
+    """Hands-free: say 'Hey Jarvis' (or press Enter), speak, pause; Jarvis answers out loud."""
+    import subprocess
+
+    import numpy as np
+
+    from jarvis.voice import recorder, stt, wake
+    from jarvis.voice.endpoint import NoiseTracker
+    from jarvis.voice.handsfree import MicFrames, capture_utterance, wait_for_wake
+    from jarvis.voice.listen import strip_wake_phrase
+
+    cfg = load_config()
+    try:
+        engine = stt.make(cfg.stt)
+        print(f"Loading speech model {engine.name} ...")
+        stt.timed(engine.load)
+        ww = wake.WakeWord(wake.load_predictor(), cfg.wake_threshold)
+    except (stt.SttError, wake.WakeError) as exc:
+        print(f"error: {exc}")
+        return 1
+    agent, proposals = build_agent(cfg, VOICE_PROMPT)
+    new_speaker = make_speaker(cfg) if speak_replies else None
+    noise = NoiseTracker()
+    ding = Path("/System/Library/Sounds/Tink.aiff")
+    print(f"Jarvis ({cfg.model}) is listening. Say 'Hey Jarvis' or press Enter. Ctrl+C quits.")
+    try:
+        with MicFrames() as frames:
+            while True:
+                how = wait_for_wake(frames, ww, noise, on_near=lambda sc: print(
+                    f"  (almost heard 'Hey Jarvis': score {sc:.2f}, needs {cfg.wake_threshold})"))
+                if ding.exists():
+                    subprocess.Popen(["afplay", str(ding)])
+                print(f"\n[{'Hey Jarvis' if how == 'wake' else 'Enter'}] listening ...")
+                audio, why = capture_utterance(frames, noise)
+                if audio is None:
+                    print(f"(heard nothing: {why})")
+                    frames.flush()
+                    continue
+                text, took = stt.timed(engine.transcribe, audio.astype(np.float32) / 32768.0)
+                text = strip_wake_phrase(text.strip())
+                if not text:
+                    print("(could not hear any words)")
+                    frames.flush()
+                    continue
+                print(f"you said> {text}   (transcribed in {took:.2f} s)")
+                answer_aloud(agent, proposals, new_speaker, text)
+                frames.flush()  # what the speakers said must not be heard as a new request
+    except recorder.RecorderError as exc:
+        print(f"error: {exc}")
+        return 1
+    except KeyboardInterrupt:
+        print("\nbye")
+        return 0
 
 
 def main() -> None:
@@ -260,8 +355,14 @@ def main() -> None:
     parser.add_argument("--voice", action="store_true", help="talk to Jarvis: speak, get a text answer")
     parser.add_argument("--no-speak", action="store_true", help="with --voice: do not read replies out loud")
     parser.add_argument("--say", metavar="TEXT", help="speak TEXT with Piper and exit")
+    parser.add_argument("--listen", action="store_true", help="hands-free: wake word, speak, pause; answers out loud")
+    parser.add_argument("--wake-test", action="store_true", help="show live wake word scores and exit with Ctrl+C")
     parser.add_argument("--devices", action="store_true", help="list microphones and exit")
     args = parser.parse_args()
+    if args.wake_test:
+        sys.exit(wake_test_cmd())
+    if args.listen:
+        sys.exit(listen_loop(not args.no_speak))
     if args.voice:
         sys.exit(voice_loop(not args.no_speak))
     if args.say:

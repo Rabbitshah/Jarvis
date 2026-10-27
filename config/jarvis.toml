@@ -46,6 +46,7 @@ stt = "mlx:mlx-community/whisper-small-mlx"
 # Piper is GPL-3.0, Jarvis is MIT.
 tts_url = "http://127.0.0.1:5500"
 tts_voice = "en_US-lessac-medium"
+wake_threshold = 0.35    # wake word sensitivity: lower = triggers more easily (more false triggers). Tune with scripts/wake-test.sh
 tts_length_scale = 0.82   # speaking speed: 1.0 normal, lower = faster (0.82 is about 20% faster)
 
 [api]

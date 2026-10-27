@@ -36,6 +36,7 @@ class Config:
     tts_url: str
     tts_voice: str
     tts_length_scale: float
+    wake_threshold: float
     api_host: str
     api_port: int
 
@@ -80,6 +81,7 @@ def load_config(path: str | Path | None = None) -> Config:
         stt=os.environ.get("JARVIS_STT") or voice.get("stt", "faster:small"),
         tts_url=os.environ.get("JARVIS_TTS_URL") or voice.get("tts_url", "http://127.0.0.1:5500"),
         tts_voice=voice.get("tts_voice", "en_US-lessac-medium"),
+        wake_threshold=float(os.environ.get("JARVIS_WAKE_THRESHOLD") or voice.get("wake_threshold", 0.35)),
         tts_length_scale=float(os.environ.get("JARVIS_TTS_SPEED") or voice.get("tts_length_scale", 1.0)),
         api_host=api["host"],
         api_port=int(api["port"]),

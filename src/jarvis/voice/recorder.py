@@ -36,14 +36,14 @@ class Recording:
         return 0 < self.peak < QUIET_PEAK
 
 
-def open_microphone(callback: Callable):
+def open_microphone(callback: Callable, blocksize: int = 0):
     """Real microphone stream (sounddevice, imported only here)."""
     try:
         import sounddevice as sd
     except (ImportError, OSError) as exc:  # OSError: PortAudio library missing
         raise RecorderError(f"audio library not available ({exc}). Run scripts/setup.sh again.") from exc
     try:
-        return sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16",
+        return sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", blocksize=blocksize,
                               callback=lambda indata, frames, t, status: callback(indata))
     except sd.PortAudioError as exc:
         raise RecorderError(f"cannot open the microphone: {exc}") from exc

@@ -115,13 +115,6 @@ const PLAN = [
     "to": "2026-11-21",
     "focus": "Voice: Push-to-talk recording to WAV (Enter starts, Enter stops); Whisper transcription; pick faster-whisper or mlx-whisper by measuring; Voice int",
     "done": "DONE (Oct 26) on the Mac: 133 tests, MacBook Pro Microphone, 6.3 s clip saved, peak 11644/32767, played back"
-  },
-  {
-    "w": 6,
-    "from": "2026-11-22",
-    "to": "2026-11-28",
-    "focus": "Ship: Minimal React chat page (cuttable); Show tool calls and sources (cuttable); Diagram and README draft; Clean install from the README in a new",
-    "done": "Streams a reply in the browser"
   }
 ];
 const DAYS = [
@@ -315,67 +308,60 @@ const DAYS = [
     "w": 5
   },
   {
-    "n": 28,
-    "date": "2026-11-20",
-    "task": "Wake word (openwakeword, check the \"hey jarvis\" model exists first) starts the same recording; push-to-talk stays",
-    "done": "Saying the phrase starts listening",
-    "w": 5
-  },
-  {
     "n": 29,
-    "date": "2026-11-21",
-    "task": "Online lookups (decided Oct 27): `weather` tool (Open-Meteo, free, no key) and `web_search` tool (free, no key). Rules: only when you ask for live info; the terminal shows exactly which words go online; nothing from your notes is ever put in a query; results are fenced as untrusted text like note excerpts; a failed lookup says so instead of guessing. SRT only if time is left",
-    "done": "Weather and one news-type question answered with the source named; offline still works",
+    "date": "2026-10-29",
+    "task": "Day 28 closed: wake word FROZEN at threshold 0.35 (no more tuning). Known limits go in the README",
+    "done": "Day 28 pushed",
     "w": 5
   },
   {
     "n": 30,
-    "date": "2026-11-22",
-    "task": "Minimal React chat page (cuttable)",
-    "done": "Streams a reply in the browser",
-    "w": 6
+    "date": "2026-10-30",
+    "task": "One results table at the top of the README (retrieval top-1/MRR, tool check, injection 0/50, voice latency) and an architecture diagram",
+    "done": "Table and diagram render on GitHub",
+    "w": 5
   },
   {
     "n": 31,
-    "date": "2026-11-23",
-    "task": "Show tool calls and sources (cuttable)",
-    "done": "Source filename is visible",
-    "w": 6
+    "date": "2026-10-31",
+    "task": "Honest limits section (Whisper mishears, wake word misses and false triggers, 8B model limits, no calendar or internet) and fix README wording (\"local, no cloud\")",
+    "done": "A reader knows what does NOT work",
+    "w": 5
   },
   {
     "n": 32,
-    "date": "2026-11-24",
-    "task": "Diagram and README draft",
-    "done": "Diagram shows on GitHub",
-    "w": 6
+    "date": "2026-11-01",
+    "task": "Clean install in a new folder from the README (clean-clone-test.sh)",
+    "done": "No undocumented steps",
+    "w": 5
   },
   {
     "n": 33,
-    "date": "2026-11-25",
-    "task": "Clean install from the README in a new folder",
-    "done": "No undocumented steps",
-    "w": 6
+    "date": "2026-11-02",
+    "task": "2 minute demo video (voice question, notes answer with sources, remember with typed y)",
+    "done": "Recorded, linked in README",
+    "w": 5
   },
   {
     "n": 34,
-    "date": "2026-11-26",
-    "task": "2 minute demo video",
-    "done": "Recorded",
-    "w": 6
+    "date": "2026-11-03",
+    "task": "Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1",
+    "done": "Bullets written, tag pushed",
+    "w": 5
   },
   {
     "n": 35,
-    "date": "2026-11-27",
-    "task": "Someone else runs it from the README; tag v0.1",
+    "date": "2026-11-04",
+    "task": "Someone else runs it from the README",
     "done": "They get a working reply",
-    "w": 6
+    "w": 5
   },
   {
     "n": 36,
-    "date": "2026-11-28",
-    "task": "Spare day",
-    "done": "n/a",
-    "w": 6
+    "date": "2026-11-05",
+    "task": "OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped)",
+    "done": "Streams a reply in the browser",
+    "w": 5
   }
 ];
 const LOG = [
@@ -644,6 +630,34 @@ const LOG = [
     "did": "Fix verified on the Mac: 'tell me a fun fact' now matches memory.md at 0.461 (was 0.591, below the 0.51 bar); 'what do I do on weekends' finds the pickleball fact at 0.634; search-eval unchanged (top-1 18/20, hit@3 20/20, MRR 0.950, right notes >= 0.521, off-topic <= 0.494). Tool check on qwen2.5:7b: answers 42/42, strict 40/42. The 2 strict misses are 'remember': across the 3 runs qwen called the remember tool 0/3, 3/3, then 1/3 times, so it is not reliable, and a 'please confirm' reply with no prompt is a false promise. Fix by code, not prompt: a plain 'Remember (that) ...' message is now recognised by a rule (explicit_request), the fact is rewritten to second person ('I like tea' -> 'You like tea'), the remember tool is called by the program and the model is not asked at all. You still must type y. 179 tests pass",
     "broke": "The rule only knows messages that START with remember (voice: after 'Hey Jarvis' is removed). 'Save this', 'note that', 'don't forget' still depend on the model. The pronoun rewrite is word by word and can produce odd grammar",
     "next": "Day 28"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 28 code: wake word. `jarvis --wake-test` (scripts/wake-test.sh) shows the live openWakeWord score for 'hey_jarvis' every second and counts detections, to tune config [voice] wake_threshold (default 0.5, env JARVIS_WAKE_THRESHOLD). `jarvis --listen` (scripts/listen.sh): the microphone runs in 80 ms frames; the wake word model watches them (audio before the phrase is thrown away, never stored); on 'Hey Jarvis' or Enter it plays a short tick, records until you pause for 1 s (speech = louder than 3x the room noise and at least 400, a guess), transcribes with Whisper, and answers out loud like voice mode (shared function answer_aloud). The microphone queue is flushed after each answer so Jarvis does not hear itself. Typed y/N for memory is unchanged. 189 tests pass (fake microphone and fake model)",
+    "broke": "Not run on a real microphone or the real model: install of openwakeword on macOS, the model download, the Model(...) arguments and the thresholds are from docs/memory. The pretrained model is non-commercial (CC BY-NC-SA 4.0): fine for a portfolio, not for selling. Speakers + built-in mic: Jarvis may trigger itself or miss you while speaking (use headphones to test). Pausing >1 s mid-question cuts you off. If detection does not work, push-to-talk (voice.sh) stays the main input",
+    "next": "On the Mac: scripts/setup.sh, scripts/test.sh, scripts/wake-test.sh (say Hey Jarvis 10 times, then stay quiet/talk/play music for 2 minutes), then scripts/listen.sh"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 28 on the Mac: openwakeword installed, model downloaded, 189 tests pass. wake-test: 22 detections in 2.8 min, highest 1.00, but many scores only 0.51-0.69 (close to the 0.5 line). listen.sh works end to end (wake, question, spoken answer, remember with typed y; 'weather' says it has no weather, correct until Day 29), but you saw it sometimes not respond. Found a bug: the 2 s pause after a detection only counted down while idle, so a 'Hey Jarvis' said soon after an answer was ignored. Fix: wake word state is reset every time listening restarts. Added a printed line when the model half-hears it (score 0.25-0.5). 191 tests pass",
+    "broke": "The wake-test number cannot be read as accuracy: I do not know how many times you really said it, so false triggers vs misses are unknown. Whisper heard 'Vadodara' as 'Valdadra' (name spelling, not wake word)",
+    "next": "Re-run listen.sh: say Hey Jarvis 10 times, note misses and the 'almost heard' scores, then decide the threshold"
+  },
+  {
+    "date": "2026-10-27",
+    "hours": "0",
+    "did": "Day 28 threshold tuning, listen.sh with the near-miss line. Built-in mic: about 13 'Hey Jarvis' tries, 0 detections; near-miss scores 0.26-0.46 (so the model hears it, the 0.5 line is too strict). AirPods: 3 near-misses (0.39, 0.26, 0.30), 0 detections. The earlier 'sometimes responds' was partly the cooldown bug (fixed) and mostly a threshold that sits above typical scores. Change: wake_threshold 0.5 -> 0.35 (config; env JARVIS_WAKE_THRESHOLD). 191 tests pass",
+    "broke": "0.35 is chosen from 16 near-miss numbers, not from a false-trigger test: lower threshold = more accidental wake-ups (TV, talking, music). Not measured yet. AirPods: Bluetooth microphones are low quality (the Mac switches them to a phone-call mode) and the AirPods score was worse; the built-in mic is the better test setup, but the speakers can then trigger it. I do not know how many tries you made on AirPods",
+    "next": "Run wake-test.sh 3 min with normal talk/music (no saying it): count detections = false triggers. Then 10 real tries: count hits. Keep 0.35 if false triggers are 0-1, else raise to 0.4"
+  },
+  {
+    "date": "2026-10-28",
+    "hours": "0",
+    "did": "Day 28 check with threshold 0.35: wake-test 11 detections in 1.3 min (scores 0.35-0.99), listen.sh answered by wake word and by Enter. Seen: one wake with 'could not hear any words' (cut off or spoken too late), Whisper heard 'Watch the time in torrent' for a time question, a stray escape character from Enter. DECISION (yours): stop adding features; make a resume-worthy finish. Plan rewritten: online lookups, integrations and more voice tuning are out of scope; Days 30 to 36 are results table + diagram, limits section, clean install, demo video, resume bullets, outside tester, optional React page",
+    "broke": "I do not know the false-trigger rate (you did not report a quiet-room count) and the hit rate from this run, so the wake word is 'works, not measured'. It will be described that way, not as reliable",
+    "next": "Commit Day 28, then Day 30: results table and diagram in the README"
   }
 ];
 // ---- END DATA ----
