@@ -2,7 +2,43 @@
 
 A personal AI assistant that runs **fully on your own machine**: a local LLM (Ollama), tools it can call, search over your own notes, a local MCP server, and a "remember this" feature that never saves without your yes. Free, no cloud, nothing leaves the laptop.
 
-> Status: terminal chat, tools, note memory, MCP server and a streaming API are built and tested on a MacBook (Apple Silicon). Voice (push-to-talk, wake word, Piper) is built; the rest of the sprint is proof and polish. See `docs/PLAN.md`.
+> Status: everything below is built and tested on a MacBook (Apple Silicon): terminal chat, tools, note search, MCP server, streaming API and voice (push-to-talk, wake word, spoken replies). No cloud services and no API keys. Remaining work is polish; see `docs/PLAN.md`.
+
+## Results at a glance
+
+Measured with this repo's own scripts on a MacBook Pro (M5 Pro). Chat model: `qwen2.5:7b`.
+
+| Area | Result |
+| --- | --- |
+| Note search (20 questions, embedded Qdrant) | right note first **18/20**, in top 3 **20/20**, MRR **0.950** |
+| Prompt injection (5 attacks x 10 runs) | planted orders obeyed **0/50**, saves without user approval **0/50** |
+| Agent check (14 questions x 3 runs) | answers correct **42/42**, strict (right tool use too) **40/42** |
+| Speech to text (Whisper small, Apple GPU) | **0.07 s** per clip, 0 wrong words on 3 test clips |
+| Voice reply | first sound **1.7-3.3 s** after the question is understood, mostly model time |
+| Unit tests | **191** passing, no model needed |
+
+## How it works
+
+```mermaid
+flowchart LR
+    Mic[Microphone] --> Wake[Wake word<br/>openWakeWord]
+    Wake --> STT[Whisper small<br/>mlx]
+    Typed[Typed text / HTTP API] --> Agent
+    STT --> Agent[Agent loop<br/>qwen2.5:7b via Ollama]
+    Agent <--> Tools[Tools<br/>get_time, list_notes,<br/>read_note, search_notes]
+    Notes[(Your notes<br/>Qdrant index)] -->|top excerpts, fenced as data| Agent
+    Tools --> Notes
+    Agent -->|propose fact| Confirm{You type y/N}
+    Confirm -->|yes| Mem[notes/memory.md]
+    Agent --> TTS[Piper voice<br/>local server]
+    TTS --> Spk[Speakers]
+    MCP[MCP server] --> Tools
+```
+
+Design choices worth knowing:
+- **No LLM framework.** A plain HTTP client talks to Ollama and the agent file is about 170 lines, so every step can be tested.
+- **Small models need guard rails in code, not prompts.** The clock is put into the system message, the answer round after a tool call gets no tools, made-up tool calls are dropped, and "remember ..." is decided by a rule. Each fix came from a failed run, listed in `docs/LOG.md`.
+- **Untrusted text is data.** Note excerpts are fenced, the model cannot save anything alone, and private notes are never indexed.
 
 ## Quick start (macOS, Apple Silicon)
 
@@ -45,8 +81,8 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | `remember`: Jarvis proposes a fact, you type y/N, it is saved to `notes/memory.md` and indexed | built, verified on the Mac |
 | Local MCP server with the same tools (except `remember`, which needs a human to approve) | built, verified in the MCP Inspector |
 | Voice: push-to-talk, Whisper (mlx), Piper, sentence-by-sentence speech | built, verified on the Mac |
-| Wake word "Hey Jarvis" (openWakeWord, runs locally; audio before the phrase is never stored) | built, needs Mac check |
-| Small web page | planned, cuttable |
+| Wake word "Hey Jarvis" (openWakeWord, runs locally; audio before the phrase is never stored) | built, works on the Mac, accuracy not measured (see Known limits) |
+| Small web page | optional, may not be built |
 
 ## Measured results
 
@@ -63,6 +99,16 @@ All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Cha
 | Unit tests | 191 passing |
 
 Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
+
+## Known limits
+
+- **Wake word:** threshold 0.35 was picked from a few dozen tries. In my tries it caught the phrase and showed detections of 0.35-0.99, but I have not measured the miss rate or the false-trigger rate. AirPods microphones scored worse than the built-in mic. With speakers and the built-in mic, Jarvis may hear itself. Enter always works instead.
+- **Speech to text:** Whisper small mishears names ("Vadodara" came out as "Valdadra") and now and then adds words. Pausing longer than 1 second ends your question early.
+- **Model:** a 7B model cannot do reliable arithmetic and rarely calls `search_notes` on its own, so notes are searched automatically before each question. Related notes can then be attached to a general question and shown under "Notes consulted".
+- **No internet, calendar or mail.** Jarvis says so instead of guessing. This is on purpose: fewer tools means less to go wrong.
+- **Test sets are small.** 20 search questions written from the notes, 14 agent questions, 5 injection attacks. Real use will score lower.
+- **Memory** only recognises messages that start with "remember"; other phrasings depend on the model.
+- **Tested on one Mac** (Apple Silicon). Other machines use faster-whisper and are untested.
 
 ## Run the MCP server locally
 
