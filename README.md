@@ -50,6 +50,8 @@ scripts/ingest.sh       # embed the notes into the local index (only changed not
 scripts/run.sh          # terminal chat
 ```
 
+Voice is optional and downloads a few things the first time you use it (Whisper small model, the Piper voice of about 60 MB, the small wake word models). These downloads need internet once; after that everything runs offline.
+
 Other commands:
 
 | Command | What it does |
