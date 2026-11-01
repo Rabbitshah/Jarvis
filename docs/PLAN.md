@@ -63,7 +63,7 @@ Out of scope, on purpose: online lookups (weather, web search), calendar or mail
 | --- | --- | --- | --- |
 | 30 | Fri Oct 30 | One results table at the top of the README (retrieval top-1/MRR, tool check, injection 0/50, voice latency) and an architecture diagram | Table and diagram render on GitHub DONE (Nov 1, code side): README top table, Mermaid diagram, Known limits. Needs your read-through |
 | 31 | Sat Oct 31 | Honest limits section (Whisper mishears, wake word misses and false triggers, 8B model limits, no calendar or internet) and fix README wording ("local, no cloud") | A reader knows what does NOT work DONE (Nov 1, code side): README top table, Mermaid diagram, Known limits. Needs your read-through |
-| 32 | Sun Nov 1 | Clean install in a new folder from the README (clean-clone-test.sh) | No undocumented steps PARTLY DONE (Nov 1): clean clone installs and passes 191 tests (install only, models skipped). Still untested from a fresh clone: model pull, ingest, a real chat, voice |
+| 32 | Sun Nov 1 | Clean install in a new folder from the README (clean-clone-test.sh) | No undocumented steps DONE (Nov 1): fresh clone, full setup with model pull, ingest, text question with sources and spoken voice answer all worked with no undocumented step. Not tested from a fresh clone: wake word (listen.sh) |
 | 33 | Mon Nov 2 | 2 minute demo video (voice question, notes answer with sources, remember with typed y) | Recorded, linked in README |
 | 34 | Tue Nov 3 | Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1 | Bullets written, tag pushed |
 | 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply |

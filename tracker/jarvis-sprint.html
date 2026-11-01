@@ -332,7 +332,7 @@ const DAYS = [
     "n": 32,
     "date": "2026-11-01",
     "task": "Clean install in a new folder from the README (clean-clone-test.sh)",
-    "done": "No undocumented steps PARTLY DONE (Nov 1): clean clone installs and passes 191 tests (install only, models skipped). Still untested from a fresh clone: model pull, ingest, a real chat, voice",
+    "done": "No undocumented steps DONE (Nov 1): fresh clone, full setup with model pull, ingest, text question with sources and spoken voice answer all worked with no undocumented step. Not tested from a fresh clone: wake word (listen.sh)",
     "w": 5
   },
   {
@@ -672,6 +672,13 @@ const LOG = [
     "did": "Day 32: clean-clone-test.sh PASS on the Mac: fresh clone, uv + Python 3.12 + 87 packages installed inside the folder (mlx-whisper, torch, openwakeword included), Ollama binary downloaded, 191 tests pass, repo stays clean. README now says voice downloads (Whisper model, Piper voice, wake models) need internet once",
     "broke": "The test uses SKIP_MODELS=1, so it does NOT prove: model download (about 5 GB), ingest, a real answer, or voice from a fresh clone. A stranger's first run can still fail there. Install is heavy (torch via mlx-whisper). Sizes in the README note are from memory",
     "next": "Run the full path once in a new folder: clone, setup.sh (no SKIP_MODELS), ingest, one question, voice.sh. Or accept the risk and go to the demo video"
+  },
+  {
+    "date": "2026-11-01",
+    "hours": "0",
+    "did": "Day 32 full clean-clone run on the Mac: setup.sh with models (qwen2.5:7b 4.7 GB, nomic-embed-text 274 MB), ingest, text question answered with 'Notes consulted', voice.sh installed Piper and the voice by itself, Whisper small downloaded (481 MB, 50 s), spoken answer, first sound 0.99 s. No undocumented step. Checked the public GitHub repo with a fresh shallow clone: notes/ holds only .gitkeep and README.md, one branch (main), so no personal note is published",
+    "broke": "Unexplained: the clean clone's ingest listed a 01-profile.md that is not in the repo and no JARVIS_* env var is set; I could not inspect the folder (it was already deleted). Cause unknown; not a GitHub leak. Cleanup slip: the clean copy's Ollama and Piper kept running (ports 11500, 5500) until killed by PID, so a later run of the main copy could have used the wrong server",
+    "next": "Day 33: demo video. Wake word from a fresh clone still untested"
   }
 ];
 // ---- END DATA ----

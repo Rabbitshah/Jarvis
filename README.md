@@ -44,13 +44,13 @@ Design choices worth knowing:
 
 ```bash
 git clone https://github.com/Rabbitshah/Jarvis.git && cd Jarvis
-scripts/setup.sh        # installs uv, Python, Ollama, deps and both models INSIDE this folder (about 5 GB)
+scripts/setup.sh        # installs uv, Python, Ollama, deps and both models INSIDE this folder (about 5 GB: chat model 4.7 GB, embedding model 0.3 GB)
 # put your .md / .txt notes in notes/ (sensitive ones in notes/private/, see Security)
 scripts/ingest.sh       # embed the notes into the local index (only changed notes are re-embedded)
 scripts/run.sh          # terminal chat
 ```
 
-Voice is optional and downloads a few things the first time you use it (Whisper small model, the Piper voice of about 60 MB, the small wake word models). These downloads need internet once; after that everything runs offline.
+Voice is optional and downloads a few things the first time you use it (Whisper small model about 480 MB, the Piper voice, the small wake word models). These downloads need internet once; after that everything runs offline.
 
 Other commands:
 
