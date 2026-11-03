@@ -57,6 +57,8 @@ Other commands:
 | Command | What it does |
 | --- | --- |
 | `scripts/run.sh --api` | HTTP API on `127.0.0.1:8000` (`POST /chat`, `POST /confirm`, `GET /health`) |
+| `scripts/web.sh` | builds the chat page (installs Node into `.tools/node` once) and starts the API. Open http://127.0.0.1:8000 |
+| `scripts/web-dev.sh` | page with hot reload on `127.0.0.1:5173`, API in the background |
 | `scripts/test.sh` | unit tests (no model needed) |
 | `scripts/doctor.sh` | checks Ollama, both models, vector size and the notes folder |
 | `scripts/mcp-smoke.sh` | starts the MCP server and calls each tool once |
@@ -87,8 +89,16 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | `remember`: Jarvis proposes a fact, you type y/N, it is saved to `notes/memory.md` and indexed | built, verified on the Mac |
 | Local MCP server with the same tools (except `remember`, which needs a human to approve) | built, verified in the MCP Inspector |
 | Voice: push-to-talk, Whisper (mlx), Piper, sentence-by-sentence speech | built, verified on the Mac |
+| Web chat page (React, served by the API at `http://127.0.0.1:8000`): streamed replies, tool cards, "Notes consulted", and a Save / Don't save card for memory | built, tested with a fake model; not yet run with the real model |
 | Wake word "Hey Jarvis" (openWakeWord, runs locally; audio before the phrase is never stored) | built, works on the Mac, accuracy not measured (see Known limits) |
 | Small web page | optional, may not be built |
+
+## Web chat page
+
+After `scripts/web.sh`, open http://127.0.0.1:8000. The page talks only to its own origin, shows tool calls as collapsed cards, lists the notes consulted, and saves a memory only when you click Save. Model and note text is shown as plain text, never as HTML.
+
+![Chat page, light, desktop](docs/img/chat-desktop-light.png)
+![Chat page, dark, phone width](docs/img/chat-mobile-dark.png)
 
 ## Measured results
 

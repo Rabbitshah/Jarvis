@@ -67,7 +67,7 @@ Out of scope, on purpose: online lookups (weather, web search), calendar or mail
 | 33 | Mon Nov 2 | 2 minute demo video (voice question, notes answer with sources, remember with typed y) | Recorded, linked in README PREPARED and checked on the Mac (Nov 1): all 6 demo questions answered correctly (see LOG). Recording is yours SKIPPED by your decision (Nov 3). Demo notes, scripts/demo.sh and docs/DEMO.md stay, so anyone can try it |
 | 34 | Tue Nov 3 | Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1 | Bullets written, tag pushed Text DONE (Nov 3): docs/RESUME.md. Your part: GitHub description, topics, tag v0.1 |
 | 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply |
-| 36 | Thu Nov 5 | OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped) | Streams a reply in the browser |
+| 36 | Thu Nov 5 | OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped) | Streams a reply in the browser DONE (Nov 3): `web/`, `scripts/web.sh`. Checked here against a fake model, not the real one |
 
 Everything after Nov 5 is buffer. Deadline: Fri Dec 4.
 

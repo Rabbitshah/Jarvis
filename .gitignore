@@ -16,3 +16,6 @@ notes/*
 !notes/README.md
 .DS_Store
 demo/notes/memory.md
+
+web/node_modules/
+web/dist/

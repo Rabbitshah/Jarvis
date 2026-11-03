@@ -1,51 +1,49 @@
 # UI spec
 
-Scope: **one chat page** (Story 11, cuttable). Terminal is the primary interface until then. No design references were supplied, so this is a functional spec, not a visual copy of any product.
+One chat page in `web/`, built on the existing API. The terminal stays the primary interface. No design references were supplied, so this is a functional spec.
 
 ## Stack
-React + Vite + Tailwind. Talks to `POST /chat` (SSE) on `127.0.0.1:8000`. TanStack Query only if a second endpoint is needed; otherwise plain `fetch` with a stream reader.
+React 19 + Vite + TypeScript + plain CSS. No router, no state library, no UI kit, no CDN, no external fonts. Tests: Vitest (+ testing-library).
 
-## Layout (desktop)
+## Serving
+- **Production:** `scripts/web.sh` builds `web/dist`; `create_app` mounts it at `/` after the API routes (only if `web/dist` exists), so `/health`, `/chat`, `/confirm` still win. Same origin, so no CORS middleware.
+- **Dev:** `scripts/web-dev.sh` runs Vite on `127.0.0.1:5173` with a proxy for `/chat`, `/confirm`, `/health` to `127.0.0.1:8000`.
+
+## Layout
 ```
-┌──────────────────────────────────────────────────────────┐
-│ Jarvis                    model: llama3.1:8b   ● online  │  header
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  you:    What did I write about the deadline?            │
-│                                                          │
-│  ▸ tool: list_notes()                  (collapsed card)  │
-│  ▸ tool: read_note("idea.md")                            │
-│                                                          │
-│  jarvis: You planned to ship by December.                │
-│          Source: idea.md                                 │  message list
-│                                                          │
-├──────────────────────────────────────────────────────────┤
-│ [ Ask Jarvis…                                  ] [Send]  │  composer
-└──────────────────────────────────────────────────────────┘
+Jarvis  qwen2.5:7b                ● online   [New chat]   header
+────────────────────────────────────────────────────────
+                         you: What did I write ...       message list
+ JARVIS  ▸ search_notes(query="...")   (collapsed card)  (column max 760 px)
+         Answer text with a cursor while streaming
+         Notes consulted: a.md  b.md
+         ┌ Save to memory? ────────────┐
+         │ fact text      [Save] [Don't save]
+────────────────────────────────────────────────────────
+[ Ask Jarvis…                                  ] [Send]  composer (sticks to bottom)
 ```
-Mobile: same single column; composer sticks to the bottom.
 
-## Components
-| Component | Behaviour |
-| --- | --- |
-| `Header` | Model name from `/health`; status dot (green = Ollama reachable, red = not) |
-| `MessageList` | Auto-scroll to newest; stop auto-scroll if the user scrolled up |
-| `Message` | Role label, streamed text; source filenames shown as chips |
-| `ToolCard` | Collapsed by default: name + args; expand shows the result (truncate at 500 chars) |
-| `Composer` | Enter sends, Shift+Enter newline; disabled while streaming; Stop button aborts the request |
-| `ErrorBanner` | Shows `error` events and "Ollama not reachable: run scripts/run.sh" |
+## Files (`web/src`)
+`sse.ts` (byte stream to events) · `api.ts` (`health`, `chat`, `confirm`) · `state.ts` (pure reducer) · `session.ts` · `App.tsx` · `components/` Header, MessageList, Message, ToolCard, SourceChips, ConfirmCard, Composer, ErrorBanner, EmptyState.
 
-## States
-| State | What the user sees |
+## Behaviour
+| Area | Rule |
 | --- | --- |
-| Empty | One-line hint and two example questions |
-| Streaming | Cursor at end of text, Send becomes Stop |
-| Tool running | ToolCard with a spinner |
-| Error | Red banner above the composer, input stays usable |
-| Offline | Header dot red, composer disabled |
+| Session | Random 32-char id (no dashes) kept in `sessionStorage` inside try/catch; "New chat" makes a new one and clears the screen. Works without storage. |
+| Health | `GET /health` on load and every 15 s. Offline: red "Ollama not reachable" text, composer disabled, banner "Ollama not reachable. Start it with scripts/run.sh --api". |
+| Streaming | `POST /chat` as SSE. Cursor while streaming, auto-scroll unless the user scrolled up ("Jump to latest"), `aria-live="polite"` on the reply. Bad SSE lines are ignored. |
+| Tool card | Collapsed; name + args; spinner while running; result truncated at 500 chars with "show more". |
+| Sources | "Notes consulted: ..." chips under the reply (added by the server). |
+| **Memory confirm** | A `confirm` event only shows a card with the fact. If `from_context` is true, a warning is shown above the buttons. Only a click on Save / Don't save calls `POST /confirm`. No timers, no auto-click, nothing from model text. |
+| Composer | Enter sends, Shift+Enter newline, max 4000 with a counter near the limit, disabled while streaming, Send becomes Stop (abort, "(stopped)"), focus returns after a reply. |
+| Errors | Network failure, non-200 and `error` events show a red banner above the composer; input stays usable. |
+| Empty | One line and two example questions; clicking fills the composer, does not send. |
+
+## Safety
+Model and tool text is rendered as React text nodes (no `dangerouslySetInnerHTML`, no markdown to HTML). The page only requests its own origin.
 
 ## Accessibility
-Keyboard-only use works; focus returns to the composer after a reply; colour is never the only signal (status dot has text); respects `prefers-color-scheme` and `prefers-reduced-motion`.
+Keyboard-only use works, visible focus, labelled controls, status shown as text not only colour, `prefers-color-scheme` and `prefers-reduced-motion` respected, works from 360 px width.
 
 ## Out of scope
-Auth, multi-user, file upload, settings screen, markdown editor, animations beyond a streaming cursor.
+Auth, multi-user, file upload, settings screen, voice in the browser, markdown rendering.

@@ -8,10 +8,11 @@ from typing import Iterator
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .agent import Agent, ChatClient
-from .config import Config, load_config
+from .config import ROOT, Config, load_config
 from .llm import OllamaClient
 from .memory.context import make_context_fn
 from .memory.remember import Proposals
@@ -74,6 +75,9 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
         msg = agent.proposals.approve(req.id) if req.approve else agent.proposals.reject(req.id)
         return {"message": msg}
 
+    dist = ROOT / "web" / "dist"
+    if dist.is_dir():  # mounted last so /health, /chat and /confirm win
+        app.mount("/", StaticFiles(directory=dist, html=True), name="web")
     return app
 
 
