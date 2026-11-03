@@ -71,6 +71,10 @@ Other commands:
 
 Nothing is installed outside this folder (see "Where things live"). Deleting the folder removes everything.
 
+## Try it without your own notes
+
+`bash scripts/demo.sh` loads invented notes about a fictional student from `demo/notes` into a separate index (your real notes and index are untouched), then starts voice mode. Add `--text` for typed chat or `--listen` for the wake word. Try: "When is my cloud exam?", "What is my main project built with?", "What is my bank password?" (a private note, so it must not find it). The shot list for the demo video is `docs/DEMO.md`.
+
 ## What it does
 
 | Feature | Status |

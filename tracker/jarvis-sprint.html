@@ -339,14 +339,14 @@ const DAYS = [
     "n": 33,
     "date": "2026-11-02",
     "task": "2 minute demo video (voice question, notes answer with sources, remember with typed y)",
-    "done": "Recorded, linked in README",
+    "done": "Recorded, linked in README PREPARED and checked on the Mac (Nov 1): all 6 demo questions answered correctly (see LOG). Recording is yours SKIPPED by your decision (Nov 3). Demo notes, scripts/demo.sh and docs/DEMO.md stay, so anyone can try it",
     "w": 5
   },
   {
     "n": 34,
     "date": "2026-11-03",
     "task": "Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1",
-    "done": "Bullets written, tag pushed",
+    "done": "Bullets written, tag pushed Text DONE (Nov 3): docs/RESUME.md. Your part: GitHub description, topics, tag v0.1",
     "w": 5
   },
   {
@@ -679,6 +679,41 @@ const LOG = [
     "did": "Day 32 full clean-clone run on the Mac: setup.sh with models (qwen2.5:7b 4.7 GB, nomic-embed-text 274 MB), ingest, text question answered with 'Notes consulted', voice.sh installed Piper and the voice by itself, Whisper small downloaded (481 MB, 50 s), spoken answer, first sound 0.99 s. No undocumented step. Checked the public GitHub repo with a fresh shallow clone: notes/ holds only .gitkeep and README.md, one branch (main), so no personal note is published",
     "broke": "Unexplained: the clean clone's ingest listed a 01-profile.md that is not in the repo and no JARVIS_* env var is set; I could not inspect the folder (it was already deleted). Cause unknown; not a GitHub leak. Cleanup slip: the clean copy's Ollama and Piper kept running (ports 11500, 5500) until killed by PID, so a later run of the main copy could have used the wrong server",
     "next": "Day 33: demo video. Wake word from a fresh clone still untested"
+  },
+  {
+    "date": "2026-11-01",
+    "hours": "0",
+    "did": "Day 33 prep: demo with invented notes so no real data is on screen. demo/notes (4 notes about a fictional student 'Asha' and one private note with a fake codeword), scripts/demo.sh (uses JARVIS_NOTES_DIR and a separate index .tools/qdrant-demo; --text / --listen options), docs/DEMO.md (2-minute shot list), README section 'Try it without your own notes'. Checked here that ingest would pick the 4 notes and skip private/",
+    "broke": "Not run: I have no Ollama here, so I do not know that the demo questions score above min_score 0.51 or that the answers are right. The demo may need note wording changes after your first run. demo/notes/memory.md is git-ignored so a saved demo fact is not committed",
+    "next": "Run scripts/demo.sh, ask the 6 questions in docs/DEMO.md, paste the output; then record"
+  },
+  {
+    "date": "2026-11-01",
+    "hours": "0",
+    "did": "Day 33 demo checked on the Mac (text mode): cloud exam -> 14 December 3 PM with the right source; main project -> FastAPI and PostgreSQL; capital of France -> Paris with no sources; 'Remember that I have a mock interview on Monday' -> y/N prompt, y saved; vault word -> not found, codeword not leaked; Sundays -> badminton. A mistyped 'emember ...' was treated as a normal question and answered from two unrelated notes (correct behaviour for the rule, but it shows 'Notes consulted' can list notes that did not matter)",
+    "broke": "The vault answer reads oddly ('The vault word is not something I can recall without being told'): safe, not polished. Reply text before the prompt says 'Please confirm and I will remember that.' which is fine. The test saved a fact to demo/notes/memory.md, so the video run must delete that file first or it will say 'Already remembered'. Voice mode of the demo (Whisper hearing 'cloud', 'ShelfShare', 'Sinhagad') not tested",
+    "next": "You record; run the 6 questions by voice once before recording"
+  },
+  {
+    "date": "2026-11-01",
+    "hours": "0",
+    "did": "Day 33 voice run of the demo on the Mac: 4 of 6 questions right by voice (exam, project, France, Sundays) and the remember prompt worked. Failures: (1) 'vault word' was heard as 'the word' / 'the word world' / 'world world' by Whisper small, so the private-note test was never asked; fix: the private demo note is now a bank password and the question is 'What is my bank password?' (clearer words; untested by voice). (2) Two 'nothing was recorded' errors and one stray arrow key (^[[C) sent as input that made the model say 'Let me check your notes' (it narrated a step): these came from pressing Enter twice or arrow keys, not from the code",
+    "broke": "Enter-to-talk is easy to break by extra key presses; this will happen in a live demo. The model still sometimes narrates ('Let me check...') despite the prompt",
+    "next": "Delete demo/notes/memory.md again, run the voice practice once more with the new question, then record"
+  },
+  {
+    "date": "2026-11-01",
+    "hours": "0",
+    "did": "Day 33 demo voice practice on the Mac: all 6 questions answered correctly by voice (exam 1.48 s to first word, others 0.1-0.2 s; Whisper heard 'build' for 'built', harmless). Bank password: 'I can't assist with that. Your bank password is sensitive information.'",
+    "broke": "That refusal is the model's own caution, not proof of the private-notes protection (no note was consulted either way). The protection is the code path, covered by unit tests; the demo narration was changed so it does not claim the refusal proves it. The model also says 'Your bank password is sensitive' which hints a password exists; harmless in a demo with fake data",
+    "next": "You record the video"
+  },
+  {
+    "date": "2026-11-03",
+    "hours": "0",
+    "did": "Video skipped (your decision). Day 34 text: docs/RESUME.md has 4 resume bullets (pick 3), a limits list for interviews, and the GitHub description and topics. Commit failed with a stale .git/index.lock: caused by a git mv I ran from the Linux side, which cannot delete the lock file in your folder. You remove it with rm -f .git/index.lock. I will not run git write commands in your repo again",
+    "broke": "The bullets use only numbers measured here; 'first sound within about 3 s' is the worst qwen run seen (2.88 s) and depends on the Mac. Without a video a reviewer must install 5 GB to see it work, which is the biggest hole left in the portfolio",
+    "next": "Commit, GitHub settings, tag v0.1"
   }
 ];
 // ---- END DATA ----
