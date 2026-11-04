@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "./Icon";
 
 const LIMIT = 500;
 
@@ -13,9 +14,14 @@ export function ToolCard({ name, args, result, running }: Props) {
   return (
     <details className="tool">
       <summary>
+        <span className="chev"><Icon name="chevron" size={14} /></span>
         <span className="tool-name">{name}</span>
         <span className="tool-args">({argText})</span>
-        {running && result === undefined && <span className="spinner" role="img" aria-label="running" />}
+        {result !== undefined ? (
+          <span className="tool-done" role="img" aria-label="done"><Icon name="check" size={14} /></span>
+        ) : (
+          running && <span className="spinner" role="img" aria-label="running" />
+        )}
       </summary>
       <div className="tool-body">
         {result === undefined ? (

@@ -79,14 +79,14 @@ class Agent:
                 return obj[key].strip()
         return content
 
-    def _propose_directly(self, fact: str) -> Iterator[dict]:
+    def _save_directly(self, fact: str) -> Iterator[dict]:
+        """The user typed "remember ..." themselves, so their own words are saved without a y/N.
+        Facts the MODEL proposes on its own still go through confirm."""
         yield {"type": "tool_call", "name": "remember", "args": {"fact": fact}}
         result = self.registry.call("remember", {"fact": fact})
-        yield {"type": "tool_result", "name": "remember", "result": result}
-        asked = self.proposals.take_new()
-        for p in asked:
-            yield {"type": "confirm", "id": p.id, "fact": p.fact, "from_context": False}  # the user's own words
-        reply = "Please confirm and I will remember that." if asked else result
+        saved = [self.proposals.approve(p.id) for p in self.proposals.take_new()]
+        reply = " ".join(saved) if saved else result  # the tool says "NOT saved yet", which is no longer true here
+        yield {"type": "tool_result", "name": "remember", "result": reply}
         self.messages.append({"role": "assistant", "content": reply})
         yield {"type": "token", "text": reply}
         yield {"type": "done"}
@@ -96,8 +96,8 @@ class Agent:
         self._trim()
         turn = len(self.messages) - 1  # index of this turn's user message
         fact = explicit_request(user_text) if self.proposals and "remember" in self.registry.names() else None
-        if fact:  # "remember that ..." is decided by code; the model only proposes it when it feels like it
-            yield from self._propose_directly(fact)
+        if fact:  # "remember that ..." is decided by code and saved at once; the model only proposes it when it feels like it
+            yield from self._save_directly(fact)
             return
         ctx = self.context_fn(user_text) if self.context_fn else None
         cited: list[str] = list(ctx.files) if ctx else []  # notes that reached the model this turn

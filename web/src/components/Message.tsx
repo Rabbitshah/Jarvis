@@ -16,7 +16,7 @@ export function Message({ msg, live, onDecide }: Props) {
   const lastIsText = msg.parts[msg.parts.length - 1]?.kind === "text";
   return (
     <div className="msg assistant">
-      <div className="label">Jarvis</div>
+      <div className="label"><span className="mark small" aria-hidden="true">J</span> Jarvis</div>
       <div aria-live="polite">
         {msg.parts.map((p, i) =>
           p.kind === "text" ? (
@@ -28,7 +28,11 @@ export function Message({ msg, live, onDecide }: Props) {
             <ToolCard key={i} name={p.name} args={p.args} result={p.result} running={live} />
           ),
         )}
-        {live && !lastIsText && <span className="cursor" aria-hidden="true" />}
+        {live && !lastIsText && (
+          <span className="typing" role="img" aria-label="Jarvis is thinking">
+            <i /><i /><i />
+          </span>
+        )}
         {msg.stopped && <p className="muted">(stopped)</p>}
       </div>
       <SourceChips files={msg.sources} />

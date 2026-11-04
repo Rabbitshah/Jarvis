@@ -360,7 +360,7 @@ const DAYS = [
     "n": 36,
     "date": "2026-11-05",
     "task": "OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped)",
-    "done": "Streams a reply in the browser",
+    "done": "Streams a reply in the browser DONE (Nov 3): `web/`, `scripts/web.sh`. Checked here against a fake model, not the real one",
     "w": 5
   }
 ];
@@ -714,6 +714,20 @@ const LOG = [
     "did": "Video skipped (your decision). Day 34 text: docs/RESUME.md has 4 resume bullets (pick 3), a limits list for interviews, and the GitHub description and topics. Commit failed with a stale .git/index.lock: caused by a git mv I ran from the Linux side, which cannot delete the lock file in your folder. You remove it with rm -f .git/index.lock. I will not run git write commands in your repo again",
     "broke": "The bullets use only numbers measured here; 'first sound within about 3 s' is the worst qwen run seen (2.88 s) and depends on the Mac. Without a video a reviewer must install 5 GB to see it work, which is the biggest hole left in the portfolio",
     "next": "Commit, GitHub settings, tag v0.1"
+  },
+  {
+    "date": "2026-11-03",
+    "hours": "0",
+    "did": "Day 36 web chat page: `web/` (React + Vite + TypeScript, plain CSS, no CDN). Streams token, tool, sources and memory-confirm events; Save / Don't save buttons call `/confirm`. FastAPI serves `web/dist` at `/` only if it exists. `scripts/web.sh`, `scripts/web-dev.sh`. 193 Python tests + 17 Vitest tests pass. Screenshots (light/dark, 1280 and 390 wide) taken against the real API app with a fake model",
+    "broke": "Playwright was not installed; used `playwright-core` in `.tools/shot` with your Chrome. A stray `/Users/playmaker/Projects/.venv` and `.tools` appeared because I sourced `env.sh` from zsh (it needs bash); delete them. Real Ollama, real model answers and Safari not tested",
+    "next": "Run `scripts/web.sh`, open http://127.0.0.1:8000, ask 2 questions and try Save"
+  },
+  {
+    "date": "2026-11-04",
+    "hours": "0",
+    "did": "Your decision, built in a separate Claude Code session (web page work): a message that starts with 'remember' is saved at once by rule (agent._save_directly, no y/N, no confirm event, 'Saved to memory.md.'); facts the MODEL proposes still need y/N or a Save click. The report says 193 Python + 17 Vitest tests pass and one live save worked in a throwaway notes folder. I did not run any of that. I updated stale text: README Security bullet, diagram, injection row wording ('model-proposed saves without approval 0/50'), RESUME bullet 3, DEMO narration, PRD story 8",
+    "broke": "Rule changed after the 'nothing is saved without a typed y' promise made on Oct 25, so every earlier mention of that promise had to be re-read: the README intro still says 'never saves without your yes' (true if typing remember counts as yes). New risk: a voice command misheard by Whisper, or a pasted message that starts with 'remember', writes a wrong fact with no check. Impact is low (memory.md is a plain file you can edit) but it is a silent write. The 0/50 injection result is still valid because the harness never types 'remember' itself, but it was measured before this change and is not re-run. Web page (a Claude Code session) is not verified by me: no browser test, no real-model streaming",
+    "next": "Run the Mac checks in handoff.md items 4 to 8, then commit"
   }
 ];
 // ---- END DATA ----

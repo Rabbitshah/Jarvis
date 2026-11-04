@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Msg, Proposal } from "../state";
+import { Icon } from "./Icon";
 import { EmptyState } from "./EmptyState";
 import { Message } from "./Message";
 
@@ -54,7 +55,7 @@ export function MessageList({ messages, streaming, onPick, onDecide }: Props) {
             toBottom();
           }}
         >
-          Jump to latest ↓
+          <Icon name="down" size={16} /> Jump to latest
         </button>
       )}
     </div>

@@ -72,7 +72,7 @@
 
 ### Story 8: `remember` with confirmation
 - **Acceptance Criteria:**
-  - WHEN the model calls `remember` THE SYSTEM SHALL ask the user y/n before writing.
+  - WHEN the model calls `remember` THE SYSTEM SHALL ask the user y/n before writing. (Changed Nov 4: a message the user types that starts with "remember" is saved at once by rule, no y/n.)
   - WHEN a note contains instructions like "ignore previous instructions" THE SYSTEM SHALL NOT write without confirmation.
 
 ### Story 9: Voice in and out

@@ -11,7 +11,7 @@ Measured with this repo's own scripts on a MacBook Pro (M5 Pro). Chat model: `qw
 | Area | Result |
 | --- | --- |
 | Note search (20 questions, embedded Qdrant) | right note first **18/20**, in top 3 **20/20**, MRR **0.950** |
-| Prompt injection (5 attacks x 10 runs) | planted orders obeyed **0/50**, saves without user approval **0/50** |
+| Prompt injection (5 attacks x 10 runs) | planted orders obeyed **0/50**, model-proposed saves without approval **0/50** |
 | Agent check (14 questions x 3 runs) | answers correct **42/42**, strict (right tool use too) **40/42** |
 | Speech to text (Whisper small, Apple GPU) | **0.07 s** per clip, 0 wrong words on 3 test clips |
 | Voice reply | first sound **1.7-3.3 s** after the question is understood, mostly model time |
@@ -28,7 +28,8 @@ flowchart LR
     Agent <--> Tools[Tools<br/>get_time, list_notes,<br/>read_note, search_notes]
     Notes[(Your notes<br/>Qdrant index)] -->|top excerpts, fenced as data| Agent
     Tools --> Notes
-    Agent -->|propose fact| Confirm{You type y/N}
+    Typed["You: remember ..."] -->|saved by rule| Mem
+    Agent -->|model proposes a fact| Confirm{You type y/N}
     Confirm -->|yes| Mem[notes/memory.md]
     Agent --> TTS[Piper voice<br/>local server]
     TTS --> Spk[Speakers]
@@ -86,7 +87,7 @@ Nothing is installed outside this folder (see "Where things live"). Deleting the
 | Search your notes by meaning (embedded Qdrant, `nomic-embed-text`) | built, verified on the Mac |
 | Note excerpts added to each question, with "Notes consulted: ..." added by the program, not the model | built, unit-tested |
 | Private notes the model can never see | built, unit-tested |
-| `remember`: Jarvis proposes a fact, you type y/N, it is saved to `notes/memory.md` and indexed | built, verified on the Mac |
+| `remember`: if you type "remember ..." it is saved to `notes/memory.md` and indexed at once; a fact the model proposes on its own still needs your y/N (terminal) or Save click (web) | built, verified on the Mac |
 | Local MCP server with the same tools (except `remember`, which needs a human to approve) | built, verified in the MCP Inspector |
 | Voice: push-to-talk, Whisper (mlx), Piper, sentence-by-sentence speech | built, verified on the Mac |
 | Web chat page (React, served by the API at `http://127.0.0.1:8000`): streamed replies, tool cards, "Notes consulted", and a Save / Don't save card for memory | built, tested with a fake model; not yet run with the real model |
@@ -166,8 +167,8 @@ All of the heavy folders and your notes are git-ignored.
 - Tools can only read `.md` / `.txt` files inside `notes/`.
 - **Private notes:** anything in `notes/private/` or matching `private_notes` in `config/jarvis.toml` (default also `*password*` and `*salary*`) is never listed, read, searched or indexed. A private note answers "not found", like a missing one.
 - Text from notes is treated as data, never as instructions: excerpts are fenced and labelled, and a note cannot close the fence.
-- `remember` can only propose a fact. Saving needs your typed y, and no tool can type it. The prompt warns when notes were in the model's context that turn, so check the fact is really yours.
-- The weak spot is the model itself: an 8B model can still be talked into calling a tool it should not. Today every tool is read-only except the confirmed `remember`. Add side-effect tools (send, delete, post) only behind the same confirmation.
+- **Two ways to save a memory.** (1) You type or say "remember ...": the program matches it by rule and saves your own words at once, with no prompt. Anything that starts with "remember" counts, including pasted text and a misheard voice command, so check `notes/memory.md` if you use voice. (2) A fact the model proposes on its own (for example "note that I live in X") can only be proposed: saving needs your typed y (terminal) or Save click (web), and no tool can give it. The prompt warns when notes were in the model's context that turn. A planted note cannot trigger path (1), because only your own message is matched.
+- The weak spot is the model itself: an 8B model can still be talked into calling a tool it should not. Today every tool is read-only except `remember`. Add side-effect tools (send, delete, post) only behind the same confirmation.
 
 ## Docs
 

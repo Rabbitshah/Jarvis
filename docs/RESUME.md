@@ -6,7 +6,7 @@
 ## Bullets (pick 3)
 - Built a fully local voice assistant in Python (wake word, Whisper speech-to-text, tool-calling LLM agent, Piper speech) with no cloud services or API keys; first spoken sound within about 3 s on a MacBook.
 - Added retrieval over personal notes (embedded Qdrant, nomic-embed-text). Chose a 400-character chunk size by experiment, lifting a 20-question test from 16/20 to 18/20 right-note-first (MRR 0.875 to 0.950); every answer lists the notes used, added by code and not by the model.
-- Hardened a small model against prompt injection: wrote a harness with 5 attack types x 10 runs (0/50 obeyed, 0 saves without approval), a typed-approval gate for memory writes, and private notes that are never indexed. 191 unit tests; same tools also exposed through an MCP server.
+- Hardened a small model against prompt injection: wrote a harness with 5 attack types x 10 runs (0/50 obeyed, 0 unapproved saves), an approval gate for memory facts the model proposes (only the user's own "remember" command saves directly), and private notes that are never indexed. 191 unit tests; same tools also exposed through an MCP server.
 - Picked the chat model by measurement (14 questions x 3 runs: qwen2.5:7b 42/42 correct vs llama3.1:8b 33/42) and fixed failures in code (clock in the prompt, tool-free answer round, rule-based "remember") instead of prompt tweaks.
 
 ## What to say if asked (limits)

@@ -1,4 +1,5 @@
 import type { Proposal } from "../state";
+import { Icon } from "./Icon";
 
 type Props = { proposal: Proposal; onDecide: (approve: boolean) => void };
 
@@ -6,7 +7,7 @@ type Props = { proposal: Proposal; onDecide: (approve: boolean) => void };
 export function ConfirmCard({ proposal: p, onDecide }: Props) {
   return (
     <section className="confirm" aria-label="Save to memory?">
-      <h2>Save to memory?</h2>
+      <h2><Icon name="shield" size={16} /> Save to memory?</h2>
       <p className="fact">{p.fact}</p>
       {p.status === "done" ? (
         <p role="status">{p.message}</p>

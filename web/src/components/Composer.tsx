@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Icon } from "./Icon";
 
 export const MAX = 4000;
 
@@ -24,6 +25,14 @@ export function Composer({ value, onChange, onSend, onStop, streaming, disabled 
     if (value && !streaming) ta.current?.focus(); // an example question was picked
   }, [value, streaming]);
 
+  useEffect(() => {
+    const el = ta.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = Math.min(el.scrollHeight, 160) + "px";
+    }
+  }, [value]);
+
   const ready = !disabled && value.trim().length > 0 && value.length <= MAX;
   return (
     <form
@@ -39,7 +48,7 @@ export function Composer({ value, onChange, onSend, onStop, streaming, disabled 
           ref={ta}
           aria-label="Message to Jarvis"
           placeholder="Ask Jarvis…"
-          rows={2}
+          rows={1}
           maxLength={MAX}
           value={value}
           disabled={disabled || streaming}
@@ -58,14 +67,15 @@ export function Composer({ value, onChange, onSend, onStop, streaming, disabled 
         )}
         {streaming ? (
           <button type="button" className="primary" onClick={onStop}>
-            Stop
+            <Icon name="stop" size={14} /> Stop
           </button>
         ) : (
           <button type="submit" className="primary" disabled={!ready}>
-            Send
+            Send <Icon name="send" size={16} />
           </button>
         )}
       </div>
+      <p className="column hint">Enter to send · Shift+Enter for a new line</p>
     </form>
   );
 }

@@ -39,6 +39,18 @@ Jarvis  qwen2.5:7b                ● online   [New chat]   header
 | Errors | Network failure, non-200 and `error` events show a red banner above the composer; input stays usable. |
 | Empty | One line and two example questions; clicking fills the composer, does not send. |
 
+## Design system
+Tokens live at the top of `web/src/styles.css`; components use only tokens.
+| Group | Tokens |
+| --- | --- |
+| Color | neutral (`--bg`, `--surface`, `--text`, `--muted`, `--line`), one accent (`--accent`, `--accent-hover`, `--accent-soft`), semantic (`--ok`, `--danger`, `--warn`); light and dark sets |
+| Space | `--s1` 4 px to `--s6` 40 px |
+| Radius | `--r-sm` 8, `--r-md` 12, `--r-lg` 18, `--r-full` |
+| Type | system font stack, `--fs-sm` to `--fs-xl`, `--mono` for tool names and results |
+| Motion | `--t` 160 ms; entrance 200 ms; all disabled under `prefers-reduced-motion` |
+| Elevation | `--shadow-1` (cards), `--shadow-2` (confirm card, jump button) |
+Icons are inline SVG (`components/Icon.tsx`, no emoji). Touch targets are at least 44 px. Hover changes color or border only, never layout.
+
 ## Safety
 Model and tool text is rendered as React text nodes (no `dangerouslySetInnerHTML`, no markdown to HTML). The page only requests its own origin.
 

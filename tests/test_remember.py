@@ -128,7 +128,7 @@ def test_agent_emits_confirm_event(c):
 def test_api_confirm_flow(c):
     llm = FakeLLM([[tool_chunk("remember", {"fact": "I play pickleball"})], [text_chunk("asked")]])
     client = TestClient(create_app(c, llm))
-    body = client.post("/chat", json={"message": "remember I play pickleball", "session_id": "s1"}).text
+    body = client.post("/chat", json={"message": "note that I play pickleball", "session_id": "s1"}).text  # model path
     assert '"type": "confirm"' in body
     pid = body.split('"id": "')[1].split('"')[0]
     assert not (c.notes_dir / MEMORY_FILE).exists()
@@ -149,7 +149,7 @@ def test_explicit_request_parsing():
     assert e("remember " + "x" * 400) is None  # too long for one fact
 
 
-def test_agent_proposes_without_the_model(cfg):
+def test_explicit_remember_is_saved_without_asking(cfg):
     from conftest import FakeLLM
     from jarvis.agent import Agent
     from jarvis.memory.remember import Proposals
@@ -158,7 +158,7 @@ def test_agent_proposes_without_the_model(cfg):
     llm = FakeLLM([])  # the model must not be called at all
     agent = Agent(llm, build_registry(cfg, None, props), "sys", 4, 40, proposals=props)
     events = list(agent.chat("Remember that I like green tea."))
-    assert [e["type"] for e in events] == ["tool_call", "tool_result", "confirm", "token", "done"]
-    assert events[2]["fact"] == "You like green tea" and events[2]["from_context"] is False
-    assert llm.calls == [] and props.pending()[0].fact == "You like green tea"
-    assert not (cfg.notes_dir / "memory.md").exists()  # nothing saved until the user says yes
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "done"]  # no confirm event
+    assert llm.calls == [] and props.pending() == []
+    assert "You like green tea" in (cfg.notes_dir / "memory.md").read_text()
+    assert events[2]["text"].startswith("Saved to memory.md")
