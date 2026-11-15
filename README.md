@@ -1,5 +1,7 @@
 # Jarvis
 
+[![CI](https://github.com/Rabbitshah/Jarvis/actions/workflows/ci.yml/badge.svg)](https://github.com/Rabbitshah/Jarvis/actions/workflows/ci.yml)
+
 A personal AI assistant that runs **fully on your own machine**: a local LLM (Ollama), tools it can call, search over your own notes, a local MCP server, and a "remember this" feature: what you tell it to remember is saved at once, and anything the model proposes on its own needs your yes. Free, no cloud, nothing leaves the laptop.
 
 > Status: everything below is built and tested on a MacBook (Apple Silicon): terminal chat, tools, note search, MCP server, streaming API and voice (push-to-talk, wake word, spoken replies). No cloud services and no API keys. Remaining work is polish; see `docs/PLAN.md`.
