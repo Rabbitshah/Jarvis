@@ -3,6 +3,7 @@ which only the interface (terminal y/n prompt, API /confirm) can call, never a t
 So a note that tries to trick the model cannot save anything on its own."""
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import time
@@ -62,11 +63,21 @@ def explicit_request(text: str) -> str | None:
     return fact[0].upper() + fact[1:]
 
 
+_UNDO = re.compile(r"^\s*(?:(?:please|hey|ok(?:ay)?)[\s,]+)*(?:forget\s+(?:that|it)|undo(?:\s+that)?|never\s?mind\s+that)\s*[.!?,]*\s*$",
+                  re.IGNORECASE)
+
+
+def undo_request(text: str) -> bool:
+    """'forget that', 'forget it', 'undo', 'undo that', 'never mind that' (decided by code, like explicit_request)."""
+    return bool(_UNDO.match(text or ""))
+
+
 class Proposals:
     def __init__(self, cfg: Config, embed: Callable[[list[str]], list[list[float]]] | None,
                  clock: Callable[[], float] = time.time) -> None:
         self.cfg, self.embed, self._clock = cfg, embed, clock
         self._items: dict[str, Proposal] = {}
+        self.saved: list[tuple[str, str]] = []  # (fact, exact memory.md line) written by THIS session: all that undo may touch
 
     def _drop_expired(self) -> None:
         now = self._clock()
@@ -114,10 +125,37 @@ class Proposals:
         if len(text) + len(line) > MAX_FILE_CHARS:
             return f"Not saved: {MEMORY_FILE} is full. Trim old lines first."
         path.write_text(text + line, encoding="utf-8")
+        self.saved.append((item.fact, line))
+        warn = self._reindex()
+        if warn is None:
+            return f"Saved to {MEMORY_FILE}."
+        return f"Saved to {MEMORY_FILE}. {warn}" if self.embed is None else f"Saved to {MEMORY_FILE}, but {warn}"
+
+    def _reindex(self, saving: bool = True) -> str | None:
+        """None if the search index is up to date, else what the user should know."""
         if self.embed is None:
-            return f"Saved to {MEMORY_FILE}. Run scripts/ingest.sh so search can find it."
+            return "Run scripts/ingest.sh so search " + ("can find it." if saving else "stops returning it.")
         try:
             ingest(self.cfg, self.embed)
         except (LLMError, StoreError) as exc:
-            return f"Saved to {MEMORY_FILE}, but the search index was not updated ({exc}). Run scripts/ingest.sh."
-        return f"Saved to {MEMORY_FILE}."
+            return f"the search index was not updated ({exc}). Run scripts/ingest.sh."
+        return None
+
+    def forget_last(self) -> str:
+        """Remove the last line THIS session saved. Never any other line."""
+        if not self.saved:
+            return "Nothing to undo."
+        fact, line = self.saved.pop()
+        root = self.cfg.notes_dir
+        path = root / MEMORY_FILE
+        if not path.exists() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):
+            return "Could not undo: the memory file is missing or not safe to write."
+        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        if line not in lines:
+            return f"Could not undo: that line is no longer in {MEMORY_FILE} (you edited it?)."
+        del lines[len(lines) - 1 - lines[::-1].index(line)]
+        tmp = path.with_name(MEMORY_FILE + ".tmp")
+        tmp.write_text("".join(lines), encoding="utf-8")
+        os.replace(tmp, path)  # atomic: the file is never half written
+        warn = self._reindex(saving=False)
+        return f"Removed: {fact}" if warn is None else f"Removed: {fact}. {warn[0].upper()}{warn[1:]}"

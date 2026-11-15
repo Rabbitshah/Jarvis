@@ -19,6 +19,16 @@ export async function* chat(message: string, sessionId: string, signal: AbortSig
   yield* parseSSE(r.body);
 }
 
+export async function forget(sessionId: string): Promise<string> {
+  const r = await fetch("/forget", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+  if (!r.ok) throw new Error(`The server answered ${r.status}.`);
+  return (await r.json()).message;
+}
+
 export async function confirm(sessionId: string, id: string, approve: boolean): Promise<string> {
   const r = await fetch("/confirm", {
     method: "POST",

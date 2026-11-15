@@ -141,7 +141,7 @@ def run_turn(agent, proposals, text: str, on_reply=None, on_token=None) -> str:
 def chat_loop() -> int:
     cfg = load_config()
     agent, proposals = build_agent(cfg)
-    print(f"Jarvis ({cfg.model}). /reset clears memory, /exit quits.")
+    print(f"Jarvis ({cfg.model}). /reset clears memory, /forget undoes the last saved fact, /exit quits.")
     while True:
         try:
             text = input("\nyou> ").strip()
@@ -155,6 +155,9 @@ def chat_loop() -> int:
         if text == "/reset":
             agent.reset()
             print("history cleared")
+            continue
+        if text == "/forget":
+            print(proposals.forget_last())
             continue
         run_turn(agent, proposals, text)
 

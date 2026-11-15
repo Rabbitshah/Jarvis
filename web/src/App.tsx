@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { chat, confirm, health as getHealth, type Health } from "./api";
+import { chat, confirm, forget, health as getHealth, type Health } from "./api";
 import { Composer } from "./components/Composer";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { Header } from "./components/Header";
@@ -58,6 +58,17 @@ export function App() {
     }
   }
 
+  async function undo(id: number) {
+    dispatch({ type: "undo", id, undo: { status: "working" } });
+    try {
+      const message = await forget(session.current);
+      dispatch({ type: "undo", id, undo: { status: "done", message } });
+    } catch (e) {
+      dispatch({ type: "undo", id, undo: { status: "ready" } });
+      dispatch({ type: "failed", message: e instanceof Error ? e.message : "Network error." });
+    }
+  }
+
   function newChat() {
     abort.current?.abort();
     session.current = saveSessionId(newSessionId());
@@ -68,7 +79,7 @@ export function App() {
   return (
     <div className="app">
       <Header health={health} online={online} onNewChat={newChat} />
-      <MessageList messages={state.messages} streaming={state.streaming} onPick={setDraft} onDecide={decide} />
+      <MessageList messages={state.messages} streaming={state.streaming} onPick={setDraft} onDecide={decide} onUndo={undo} />
       <div className="column banners">
         {!online && <ErrorBanner message={OFFLINE} />}
         {state.error && <ErrorBanner message={state.error} onDismiss={() => dispatch({ type: "dismiss_error" })} />}

@@ -6,7 +6,7 @@ import re
 from typing import Any, Callable, Iterator, Protocol
 
 from .llm import LLMError
-from .memory.remember import explicit_request
+from .memory.remember import explicit_request, undo_request
 from .tools.registry import Registry
 
 
@@ -84,9 +84,18 @@ class Agent:
         Facts the MODEL proposes on its own still go through confirm."""
         yield {"type": "tool_call", "name": "remember", "args": {"fact": fact}}
         result = self.registry.call("remember", {"fact": fact})
+        before = len(self.proposals.saved)
         saved = [self.proposals.approve(p.id) for p in self.proposals.take_new()]
         reply = " ".join(saved) if saved else result  # the tool says "NOT saved yet", which is no longer true here
         yield {"type": "tool_result", "name": "remember", "result": reply}
+        self.messages.append({"role": "assistant", "content": reply})
+        yield {"type": "token", "text": reply}
+        if len(self.proposals.saved) > before:  # something was really written: the web page offers Undo
+            yield {"type": "saved", "fact": fact}
+        yield {"type": "done"}
+
+    def _undo(self) -> Iterator[dict]:
+        reply = self.proposals.forget_last()
         self.messages.append({"role": "assistant", "content": reply})
         yield {"type": "token", "text": reply}
         yield {"type": "done"}
@@ -95,6 +104,9 @@ class Agent:
         self.messages.append({"role": "user", "content": user_text})
         self._trim()
         turn = len(self.messages) - 1  # index of this turn's user message
+        if self.proposals and undo_request(user_text):  # decided by code; the model never sees it
+            yield from self._undo()
+            return
         fact = explicit_request(user_text) if self.proposals and "remember" in self.registry.names() else None
         if fact:  # "remember that ..." is decided by code and saved at once; the model only proposes it when it feels like it
             yield from self._save_directly(fact)

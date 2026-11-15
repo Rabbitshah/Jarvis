@@ -157,7 +157,129 @@ def test_explicit_remember_is_saved_without_asking(cfg):
     llm = FakeLLM([])  # the model must not be called at all
     agent = Agent(llm, build_registry(cfg, None, props), "sys", 4, 40, proposals=props)
     events = list(agent.chat("Remember that I like green tea."))
-    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "done"]  # no confirm event
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "saved", "done"]  # no confirm event
     assert llm.calls == [] and props.pending() == []
     assert "You like green tea" in (cfg.notes_dir / "memory.md").read_text()
     assert events[2]["text"].startswith("Saved to memory.md")
+
+
+# ---- undo ("forget that") ----
+
+def saved(props, fact):
+    return props.approve(props.add(fact).id)
+
+
+def test_undo_removes_exactly_the_saved_line(c):
+    props = Proposals(c, fake_embed)
+    path = c.notes_dir / MEMORY_FILE
+    saved(props, "I like aaa")
+    saved(props, "I like bbb")
+    before = path.read_text()
+    assert props.forget_last() == "Removed: I like bbb"
+    after = path.read_text()
+    assert after == before.replace(before.splitlines(keepends=True)[-1], "")
+    assert "I like aaa" in after and "I like bbb" not in after
+    assert not path.with_name(MEMORY_FILE + ".tmp").exists()
+
+
+def test_second_undo_goes_back_one_then_says_nothing(c):
+    props = Proposals(c, fake_embed)
+    saved(props, "I like aaa")
+    assert props.forget_last() == "Removed: I like aaa"
+    assert props.forget_last() == "Nothing to undo."
+
+
+def test_undo_with_nothing_saved(c):
+    assert Proposals(c, fake_embed).forget_last() == "Nothing to undo."
+
+
+def test_undo_never_touches_lines_this_session_did_not_write(c):
+    path = c.notes_dir / MEMORY_FILE
+    older = Proposals(c, fake_embed)
+    saved(older, "I like ccc")                       # another session
+    path.write_text(path.read_text() + "- 2020-01-01: hand written line\n")
+    mine = Proposals(c, fake_embed)
+    assert mine.forget_last() == "Nothing to undo."  # saved nothing itself
+    assert saved(mine, "I like ddd").startswith("Saved")
+    assert mine.forget_last() == "Removed: I like ddd"
+    assert mine.forget_last() == "Nothing to undo."
+    text = path.read_text()
+    assert "I like ccc" in text and "hand written line" in text and "I like ddd" not in text
+
+
+def test_already_remembered_is_not_undoable(c):
+    saved(Proposals(c, fake_embed), "I like aaa")
+    mine = Proposals(c, fake_embed)
+    assert saved(mine, "I like aaa") == "Already remembered."
+    assert mine.forget_last() == "Nothing to undo."
+    assert "I like aaa" in (c.notes_dir / MEMORY_FILE).read_text()
+
+
+def test_undo_when_the_line_was_edited_away(c):
+    props = Proposals(c, fake_embed)
+    saved(props, "I like aaa")
+    path = c.notes_dir / MEMORY_FILE
+    path.write_text("# Memory\n\n- hand edit\n")
+    assert "no longer in" in props.forget_last()
+    assert path.read_text() == "# Memory\n\n- hand edit\n"
+
+
+def test_undo_updates_the_search_index(c):
+    props = Proposals(c, fake_embed)
+    saved(props, "My favourite letter is aaa")
+    assert any("favourite letter" in h.text for h in search_notes(c, fake_embed, "aaa", k=5))
+    props.forget_last()
+    assert not any("favourite letter" in h.text for h in search_notes(c, fake_embed, "aaa", k=5))
+
+
+def test_undo_without_embedder_says_to_reingest(c):
+    props = Proposals(c, None)
+    saved(props, "I like aaa")
+    out = props.forget_last()
+    assert out == "Removed: I like aaa. Run scripts/ingest.sh so search stops returning it."
+
+
+@pytest.mark.parametrize("text", ["forget that", "Forget it", "undo that", "undo", "never mind that", "nevermind that",
+                                  "please undo", "Hey, forget that!", "ok forget it.", "okay, undo that?"])
+def test_undo_phrases_match(text):
+    from jarvis.memory.remember import undo_request
+    assert undo_request(text)
+
+
+@pytest.mark.parametrize("text", ["forget that I like tea", "undo the last commit", "can you undo that for me", "remember that undo",
+                                  "forget", "never mind", "", "what is undo"])
+def test_other_sentences_do_not_match(text):
+    from jarvis.memory.remember import undo_request
+    assert not undo_request(text)
+
+
+def test_agent_undo_never_reaches_the_model(c):
+    llm = FakeLLM([])  # any model call would raise IndexError
+    props = Proposals(c, fake_embed)
+    agent = Agent(llm, build_registry(c, fake_embed, props), "sys", 4, 40, None, props)
+    events = list(agent.chat("remember that I like aaa"))
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "saved", "done"]
+    assert events[3]["fact"] == "You like aaa"
+    undo = list(agent.chat("undo that"))
+    assert [e["type"] for e in undo] == ["token", "done"] and undo[0]["text"] == "Removed: You like aaa"
+    assert llm.calls == []
+    assert list(agent.chat("forget it"))[0]["text"] == "Nothing to undo."
+
+
+def test_no_saved_event_when_nothing_was_written(c):
+    props = Proposals(c, fake_embed)
+    agent = Agent(FakeLLM([]), build_registry(c, fake_embed, props), "sys", 4, 40, None, props)
+    list(agent.chat("remember that I like aaa"))
+    again = list(agent.chat("remember that I like aaa"))
+    assert "saved" not in [e["type"] for e in again]
+
+
+def test_api_forget_route(c):
+    llm = FakeLLM([])
+    client = api_client(create_app(c, llm), c)
+    assert client.post("/forget", json={"session_id": "nobody"}).status_code == 404
+    client.post("/chat", json={"message": "remember that I like aaa", "session_id": "s1"})
+    assert client.post("/forget", json={"session_id": "s2"}).status_code == 404            # other session
+    assert client.post("/forget", json={"session_id": "s1"}).json()["message"].startswith("Removed: You like aaa")
+    assert client.post("/forget", json={"session_id": "s1"}).json() == {"message": "Nothing to undo."}
+    assert client.post("/forget", json={"session_id": "../x"}).status_code == 422

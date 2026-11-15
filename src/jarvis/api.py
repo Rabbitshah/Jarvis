@@ -28,6 +28,10 @@ class ConfirmRequest(BaseModel):
     approve: bool
 
 
+class ForgetRequest(BaseModel):
+    session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
@@ -77,8 +81,15 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
         msg = agent.proposals.approve(req.id) if req.approve else agent.proposals.reject(req.id)
         return {"message": msg}
 
+    @app.post("/forget")
+    def forget(req: ForgetRequest) -> dict:
+        agent = sessions.get(req.session_id)
+        if agent is None or agent.proposals is None:
+            raise HTTPException(status_code=404, detail="unknown session")
+        return {"message": agent.proposals.forget_last()}
+
     dist = ROOT / "web" / "dist"
-    if dist.is_dir():  # mounted last so /health, /chat and /confirm win
+    if dist.is_dir():  # mounted last so /health, /chat, /confirm and /forget win
         app.mount("/", StaticFiles(directory=dist, html=True), name="web")
     return app
 

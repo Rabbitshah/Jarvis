@@ -9,9 +9,10 @@ type Props = {
   streaming: boolean;
   onPick: (text: string) => void;
   onDecide: (p: Proposal, approve: boolean) => void;
+  onUndo: (id: number) => void;
 };
 
-export function MessageList({ messages, streaming, onPick, onDecide }: Props) {
+export function MessageList({ messages, streaming, onPick, onDecide, onUndo }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const [away, setAway] = useState(false);
@@ -40,7 +41,7 @@ export function MessageList({ messages, streaming, onPick, onDecide }: Props) {
             <EmptyState onPick={onPick} />
           ) : (
             messages.map((m, i) => (
-              <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} />
+              <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} onUndo={onUndo} />
             ))
           )}
         </div>

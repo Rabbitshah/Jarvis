@@ -47,3 +47,23 @@ describe("reducer", () => {
     expect(run(send(), { type: "reset" }).messages).toEqual([]);
   });
 });
+
+describe("undo", () => {
+  const saved = (): Action => ev({ type: "saved", fact: "You like tea" });
+  it("a saved event makes an Undo button available on that reply", () => {
+    expect(reply(run(send(), saved())).undo).toEqual({ status: "ready" });
+  });
+  it("a reply without a saved event has no Undo", () => {
+    expect(reply(run(send(), ev({ type: "token", text: "hi" }), ev({ type: "done" }))).undo).toBeUndefined();
+  });
+  it("sending the next message removes a ready Undo", () => {
+    const s = run(send(), saved(), ev({ type: "done" }), send());
+    expect(s.messages.filter((m) => m.role === "assistant" && m.undo)).toEqual([]);
+  });
+  it("using Undo moves working -> done and keeps the note after the next message", () => {
+    const id = reply(run(send(), saved())).id;
+    const s = run(send(), saved(), { type: "undo", id, undo: { status: "working" } }, { type: "undo", id, undo: { status: "done", message: "Removed: You like tea" } }, send());
+    const first = s.messages[1] as Extract<Msg, { role: "assistant" }>;
+    expect(first.undo).toEqual({ status: "done", message: "Removed: You like tea" });
+  });
+});

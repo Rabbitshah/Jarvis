@@ -3,9 +3,14 @@ import { ConfirmCard } from "./ConfirmCard";
 import { SourceChips } from "./SourceChips";
 import { ToolCard } from "./ToolCard";
 
-type Props = { msg: Msg; live: boolean; onDecide: (p: Proposal, approve: boolean) => void };
+type Props = {
+  msg: Msg;
+  live: boolean;
+  onDecide: (p: Proposal, approve: boolean) => void;
+  onUndo: (id: number) => void;
+};
 
-export function Message({ msg, live, onDecide }: Props) {
+export function Message({ msg, live, onDecide, onUndo }: Props) {
   if (msg.role === "user") {
     return (
       <div className="msg user">
@@ -35,6 +40,15 @@ export function Message({ msg, live, onDecide }: Props) {
         )}
         {msg.stopped && <p className="muted">(stopped)</p>}
       </div>
+      {msg.undo?.status === "done" ? (
+        <p className="muted" role="status">{msg.undo.message}</p>
+      ) : (
+        msg.undo && !live && (
+          <button type="button" className="undo" disabled={msg.undo.status === "working"} onClick={() => onUndo(msg.id)}>
+            Undo
+          </button>
+        )
+      )}
       <SourceChips files={msg.sources} />
       {msg.proposals.map((p) => (
         <ConfirmCard key={p.id} proposal={p} onDecide={(a) => onDecide(p, a)} />

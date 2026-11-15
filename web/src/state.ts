@@ -12,9 +12,11 @@ export type Proposal = {
   message?: string;
 };
 
+export type Undo = { status: "ready" | "working" | "done"; message?: string };
+
 export type Msg =
   | { id: number; role: "user"; text: string }
-  | { id: number; role: "assistant"; parts: Part[]; sources: string[]; proposals: Proposal[]; stopped: boolean };
+  | { id: number; role: "assistant"; parts: Part[]; sources: string[]; proposals: Proposal[]; stopped: boolean; undo?: Undo };
 
 export type State = { messages: Msg[]; streaming: boolean; error: string | null; nextId: number };
 
@@ -25,6 +27,7 @@ export type Action =
   | { type: "failed"; message: string }
   | { type: "dismiss_error" }
   | { type: "proposal"; id: string; patch: Partial<Proposal> }
+  | { type: "undo"; id: number; undo: Undo }
   | { type: "reset" };
 
 export const initial: State = { messages: [], streaming: false, error: null, nextId: 1 };
@@ -63,6 +66,8 @@ function applyEvent(s: State, ev: ChatEvent): State {
         ...m,
         proposals: [...m.proposals, { id: ev.id, fact: ev.fact, fromContext: ev.from_context, status: "pending" }],
       }));
+    case "saved": // the reply that says "Saved to memory.md." gets an Undo button
+      return lastAssistant(s, (m) => ({ ...m, undo: { status: "ready" } }));
     case "error":
       return { ...s, error: ev.message };
     case "done":
@@ -79,7 +84,8 @@ export function reducer(s: State, a: Action): State {
         error: null,
         nextId: s.nextId + 2,
         messages: [
-          ...s.messages,
+          // sending the next message removes any Undo button still on screen (a finished one keeps its note)
+          ...s.messages.map((m) => (m.role === "assistant" && m.undo && m.undo.status !== "done" ? { ...m, undo: undefined } : m)),
           { id: s.nextId, role: "user", text: a.text },
           { id: s.nextId + 1, role: "assistant", parts: [], sources: [], proposals: [], stopped: false },
         ],
@@ -102,6 +108,8 @@ export function reducer(s: State, a: Action): State {
             : m,
         ),
       };
+    case "undo":
+      return { ...s, messages: s.messages.map((m) => (m.id === a.id && m.role === "assistant" ? { ...m, undo: a.undo } : m)) };
     case "reset":
       return { ...initial, nextId: s.nextId };
   }

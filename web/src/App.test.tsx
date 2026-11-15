@@ -38,6 +38,51 @@ async function ask() {
   await screen.findByText("Save to memory?");
 }
 
+describe("Undo after a direct save", () => {
+  const SAVED = [
+    { type: "token", text: "Saved to memory.md." },
+    { type: "saved", fact: "You like tea" },
+    { type: "done" },
+  ];
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls.push(url);
+        if (url === "/health") return Response.json({ status: "ok", ollama: true, model: "m1", tools: [] });
+        if (url === "/forget") return Response.json({ message: "Removed: You like tea" });
+        return new Response(SAVED.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(""), { headers: { "content-type": "text/event-stream" } });
+      }),
+    );
+  });
+  const say = (text: string) => {
+    fireEvent.change(screen.getByLabelText("Message to Jarvis"), { target: { value: text } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  };
+
+  it("shows a real Undo button, calls /forget only on click, then shows the answer instead", async () => {
+    render(<App />);
+    say("remember that I like tea");
+    const btn = await screen.findByRole("button", { name: "Undo" });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(calls).not.toContain("/forget"); // never clicked by itself
+    fireEvent.click(btn);
+    await screen.findByText("Removed: You like tea");
+    expect(calls.filter((c) => c === "/forget")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+  });
+  it("removes the Undo button when the next message is sent", async () => {
+    render(<App />);
+    say("remember that I like tea");
+    await screen.findByRole("button", { name: "Undo" });
+    say("what time is it");
+    await waitFor(() => expect(calls.filter((c) => c === "/chat")).toHaveLength(2));
+    await new Promise((r) => setTimeout(r, 50)); // second reply finished streaming
+    expect(screen.getAllByRole("button", { name: "Undo" })).toHaveLength(1); // only the new reply has one: the old one is gone
+    expect(calls.filter((c) => c === "/forget")).toHaveLength(0);
+  });
+});
+
 describe("App with a scripted stream", () => {
   it("shows reply as plain text, tool card, sources and the confirm card", async () => {
     await ask();

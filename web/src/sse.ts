@@ -4,10 +4,11 @@ export type ChatEvent =
   | { type: "tool_result"; name: string; result: string }
   | { type: "sources"; files: string[] }
   | { type: "confirm"; id: string; fact: string; from_context: boolean }
+  | { type: "saved"; fact: string }
   | { type: "error"; message: string }
   | { type: "done" };
 
-const KINDS = new Set(["token", "tool_call", "tool_result", "sources", "confirm", "error", "done"]);
+const KINDS = new Set(["token", "tool_call", "tool_result", "sources", "confirm", "saved", "error", "done"]);
 
 function parseLine(line: string): ChatEvent | null {
   if (!line.startsWith("data:")) return null;
