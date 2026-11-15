@@ -1,3 +1,4 @@
+import { AnimatePresence, MotionConfig } from "motion/react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { chat, confirm, forget, health as getHealth, type Health } from "./api";
 import { Composer } from "./components/Composer";
@@ -77,12 +78,15 @@ export function App() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="app">
       <Header health={health} online={online} onNewChat={newChat} />
       <MessageList messages={state.messages} streaming={state.streaming} onPick={setDraft} onDecide={decide} onUndo={undo} />
       <div className="column banners">
-        {!online && <ErrorBanner message={OFFLINE} />}
-        {state.error && <ErrorBanner message={state.error} onDismiss={() => dispatch({ type: "dismiss_error" })} />}
+        <AnimatePresence initial={false}>
+          {!online && <ErrorBanner key="offline" message={OFFLINE} />}
+          {state.error && <ErrorBanner key="error" message={state.error} onDismiss={() => dispatch({ type: "dismiss_error" })} />}
+        </AnimatePresence>
       </div>
       <Composer
         value={draft}
@@ -93,5 +97,6 @@ export function App() {
         disabled={!online}
       />
     </div>
+    </MotionConfig>
   );
 }

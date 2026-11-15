@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import type { Msg, Proposal } from "../state";
 import { ConfirmCard } from "./ConfirmCard";
 import { SourceChips } from "./SourceChips";
@@ -13,14 +14,14 @@ type Props = {
 export function Message({ msg, live, onDecide, onUndo }: Props) {
   if (msg.role === "user") {
     return (
-      <div className="msg user">
+      <motion.div className="msg user" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
         <div className="bubble">{msg.text}</div>
-      </div>
+      </motion.div>
     );
   }
   const lastIsText = msg.parts[msg.parts.length - 1]?.kind === "text";
   return (
-    <div className="msg assistant">
+    <motion.div className="msg assistant" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       <div className="label"><span className="mark small" aria-hidden="true">J</span> Jarvis</div>
       <div aria-live="polite">
         {msg.parts.map((p, i) =>
@@ -53,6 +54,6 @@ export function Message({ msg, live, onDecide, onUndo }: Props) {
       {msg.proposals.map((p) => (
         <ConfirmCard key={p.id} proposal={p} onDecide={(a) => onDecide(p, a)} />
       ))}
-    </div>
+    </motion.div>
   );
 }

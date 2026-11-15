@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "motion": "14.8.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

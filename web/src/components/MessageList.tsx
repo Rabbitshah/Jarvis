@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { Msg, Proposal } from "../state";
 import { Icon } from "./Icon";
@@ -37,13 +38,16 @@ export function MessageList({ messages, streaming, onPick, onDecide, onUndo }: P
     <div className="list-wrap">
       <div className="list" ref={box} onScroll={onScroll}>
         <div className="column">
-          {messages.length === 0 ? (
-            <EmptyState onPick={onPick} />
-          ) : (
-            messages.map((m, i) => (
-              <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} onUndo={onUndo} />
-            ))
-          )}
+          <AnimatePresence mode="popLayout">
+            {messages.length === 0 && (
+              <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                <EmptyState onPick={onPick} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {messages.map((m, i) => (
+            <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} onUndo={onUndo} />
+          ))}
         </div>
       </div>
       {away && (
