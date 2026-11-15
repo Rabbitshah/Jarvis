@@ -16,6 +16,7 @@ from .config import ROOT, Config, load_config
 from .llm import OllamaClient
 from .memory.context import make_context_fn
 from .memory.remember import Proposals
+from .security import LocalOnly
 from .tools.builtin import build_registry
 
 MAX_SESSIONS = 20
@@ -39,6 +40,7 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
     registry = build_registry(cfg)
     sessions: "OrderedDict[str, Agent]" = OrderedDict()
     app = FastAPI(title="Jarvis", version="0.1.0")
+    app.add_middleware(LocalOnly, port=cfg.api_port, extra_origins=cfg.api_allowed_origins)
 
     def get_agent(session_id: str) -> Agent:
         if session_id in sessions:

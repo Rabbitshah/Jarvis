@@ -39,6 +39,7 @@ class Config:
     wake_threshold: float
     api_host: str
     api_port: int
+    api_allowed_origins: tuple[str, ...]
 
 
 def load_config(path: str | Path | None = None) -> Config:
@@ -85,4 +86,6 @@ def load_config(path: str | Path | None = None) -> Config:
         tts_length_scale=float(os.environ.get("JARVIS_TTS_SPEED") or voice.get("tts_length_scale", 1.0)),
         api_host=api["host"],
         api_port=int(api["port"]),
+        api_allowed_origins=tuple(api.get("allowed_origins", [])) + tuple(
+            o.strip() for o in os.environ.get("JARVIS_ALLOWED_ORIGINS", "").split(",") if o.strip()),
     )

@@ -2,7 +2,6 @@
 import time
 
 import pytest
-from fastapi.testclient import TestClient
 
 from jarvis.api import create_app
 from jarvis.tools.registry import Registry, Tool, ToolError
@@ -64,7 +63,7 @@ def test_read_note_empty_and_huge(cfg):
 
 @pytest.mark.parametrize("sid", ["a b", "../x", "x" * 65, ""])
 def test_bad_session_id_rejected(cfg, sid):
-    from conftest import FakeLLM
-    client = TestClient(create_app(cfg, FakeLLM([])))
+    from conftest import FakeLLM, api_client
+    client = api_client(create_app(cfg, FakeLLM([])), cfg)
     r = client.post("/chat", json={"message": "hi", "session_id": sid})
     assert r.status_code == 422

@@ -2,6 +2,7 @@ import dataclasses
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 from jarvis.config import ROOT, load_config
 
@@ -66,3 +67,8 @@ def cfg(tmp_path):
     notes.mkdir()
     (notes / "idea.md").write_text("Ship Jarvis by December.", encoding="utf-8")
     return dataclasses.replace(load_config(), notes_dir=notes, index_dir=tmp_path / "index")
+
+
+def api_client(app, cfg):
+    """TestClient whose Host is the real local address (the API refuses other hosts)."""
+    return TestClient(app, base_url=f"http://127.0.0.1:{cfg.api_port}")

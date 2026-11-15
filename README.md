@@ -166,6 +166,8 @@ All of the heavy folders and your notes are git-ignored.
 ## Security
 
 - The API binds to `127.0.0.1` only. There is no auth, so do not expose it.
+- **Browser guard:** the API refuses any request whose `Host` is not `127.0.0.1`, `localhost` or `[::1]` (with the API port), and any POST/PUT/PATCH/DELETE whose `Origin` is another site. This stops a web page in your browser from driving it (DNS rebinding, cross-site POST). Extra origins: `allowed_origins` in `config/jarvis.toml` or env `JARVIS_ALLOWED_ORIGINS` (`scripts/web-dev.sh` sets it for Vite).
+- **Limit:** this is not authentication. A request with no `Origin` (curl, a script) is allowed, so anyone with a shell on this Mac can still call the API.
 - Tools can only read `.md` / `.txt` files inside `notes/`.
 - **Private notes:** anything in `notes/private/` or matching `private_notes` in `config/jarvis.toml` (default also `*password*` and `*salary*`) is never listed, read, searched or indexed. A private note answers "not found", like a missing one.
 - Text from notes is treated as data, never as instructions: excerpts are fenced and labelled, and a note cannot close the fence.

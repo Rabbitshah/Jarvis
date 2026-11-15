@@ -1,9 +1,8 @@
 import dataclasses
 
 import pytest
-from fastapi.testclient import TestClient
 
-from conftest import FakeLLM, text_chunk, tool_chunk
+from conftest import FakeLLM, api_client, text_chunk, tool_chunk
 from jarvis.agent import Agent
 from jarvis.api import create_app
 from jarvis.llm import LLMError
@@ -127,7 +126,7 @@ def test_agent_emits_confirm_event(c):
 
 def test_api_confirm_flow(c):
     llm = FakeLLM([[tool_chunk("remember", {"fact": "I play pickleball"})], [text_chunk("asked")]])
-    client = TestClient(create_app(c, llm))
+    client = api_client(create_app(c, llm), c)
     body = client.post("/chat", json={"message": "note that I play pickleball", "session_id": "s1"}).text  # model path
     assert '"type": "confirm"' in body
     pid = body.split('"id": "')[1].split('"')[0]

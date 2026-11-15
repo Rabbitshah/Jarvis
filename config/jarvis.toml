@@ -50,5 +50,6 @@ wake_threshold = 0.35    # wake word sensitivity: lower = triggers more easily (
 tts_length_scale = 0.82   # speaking speed: 1.0 normal, lower = faster (0.82 is about 20% faster)
 
 [api]
-host = "127.0.0.1"    # local only. Do not change without adding auth.
+host = "127.0.0.1"    # local only. Do not change host without adding auth.
 port = 8000
+# allowed_origins = []   # extra web origins allowed to POST (e.g. ["http://127.0.0.1:5173"]); env JARVIS_ALLOWED_ORIGINS, comma separated
