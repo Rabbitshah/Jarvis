@@ -17,7 +17,7 @@ Measured with this repo's own scripts on a MacBook Pro (M5 Pro). Chat model: `qw
 | Agent check (14 questions x 3 runs) | answers correct **42/42**, strict (right tool use too) **40/42** |
 | Speech to text (Whisper small, Apple GPU) | **0.07 s** per clip, 0 wrong words on 3 test clips |
 | Voice reply | first sound **1.7-3.3 s** after the question is understood, mostly model time |
-| Unit tests | **191** passing, no model needed |
+| Unit tests | **249** Python + **23** web tests passing, no model needed |
 
 ## How it works
 
@@ -115,7 +115,7 @@ All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Cha
 | Prompt injection: planted orders obeyed (5 attacks x 10 runs, qwen2.5:7b) | **0 / 50** (llama3.1:8b earlier: 1 / 50) |
 | Prompt injection: facts saved without the user's yes | **0 / 50** |
 | Chat model check (14 questions x 3 trials): answers correct | **39 / 42** (qwen2.5:7b) vs 33 / 42 (llama3.1:8b) |
-| Unit tests | 191 passing |
+| Unit tests | 249 Python + 23 web (Vitest) passing |
 
 Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
 
@@ -173,6 +173,22 @@ All of the heavy folders and your notes are git-ignored.
 - Text from notes is treated as data, never as instructions: excerpts are fenced and labelled, and a note cannot close the fence.
 - **Two ways to save a memory.** (1) You type or say "remember ...": the program matches it by rule and saves your own words at once, with no prompt. Anything that starts with "remember" counts, including pasted text and a misheard voice command, so check `notes/memory.md` if you use voice. **Undo:** say or type "forget that" / "undo" (terminal also `/forget`, web page has an Undo button next to the reply) and the last fact *this session* saved is removed from `notes/memory.md`; it never touches lines this session did not write. (2) A fact the model proposes on its own (for example "note that I live in X") can only be proposed: saving needs your typed y (terminal) or Save click (web), and no tool can give it. The prompt warns when notes were in the model's context that turn. A planted note cannot trigger path (1), because only your own message is matched.
 - The weak spot is the model itself: an 8B model can still be talked into calling a tool it should not. Today every tool is read-only except `remember`. Add side-effect tools (send, delete, post) only behind the same confirmation.
+
+## Troubleshooting
+
+Texts in quotes are copied from the code. Run `jarvis --devices`, `scripts/wake-test.sh` and `scripts/doctor.sh` to see what Jarvis sees.
+
+| Problem | What it means / what to do |
+| --- | --- |
+| "The recording is completely silent. On macOS this usually means Terminal has no microphone permission..." | System Settings > Privacy & Security > Microphone > turn on Terminal, then restart Terminal. |
+| "The recording is very quiet. Check the input device (jarvis --devices) and the input volume." | Wrong input device or low volume. The default input can switch between the built-in mic, AirPods and an iPhone (Continuity). Run `jarvis --devices`, then set `[voice] input_device` in `config/jarvis.toml` (a number or part of a name) or env `JARVIS_INPUT_DEVICE`. |
+| `input device "..." not found. Available input devices: ...` | `input_device` matches no microphone. Use a number or a name part from the list printed in that message. Empty = system default. |
+| Voice works badly with AirPods, or Jarvis answers itself | AirPods microphones scored worse than the built-in mic in my tests (see Known limits). With speakers and the built-in mic Jarvis may hear itself: use headphones, or press Enter instead of the wake word. |
+| "Ollama not reachable" / no answer on port 11500 | `scripts/ollama-up.sh` treats anything already answering on 11500 as Jarvis's Ollama and starts nothing. If another copy holds the port, run `bash scripts/stop.sh`, check `lsof -i :11500`, then start again. If it says "Ollama did not start. See .tools/ollama.log", read that file. |
+| "Piper is not running, so replies will be text only." | Start it: `bash scripts/piper-up.sh`. |
+| First voice run is slow or fails with "cannot load ..." / "cannot load the wake word model: ..." | The Whisper model, the Piper voice and the wake word model are downloaded once and need internet that first time. After that voice runs offline. |
+| Whisper writes a wrong word or name | Whisper small mishears names ("Vadodara" came out as "Valdadra"). Check the `you said>` line, or type the question. |
+| Wake word does not trigger, or triggers by itself | Run `scripts/wake-test.sh` and watch the scores. `wake_threshold` in `config/jarvis.toml` (or env `JARVIS_WAKE_THRESHOLD`): lower = triggers more easily, higher = fewer false triggers. A near miss prints `(almost heard 'Hey Jarvis': score ..., needs ...)`. |
 
 ## Docs
 

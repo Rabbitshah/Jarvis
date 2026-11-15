@@ -1,3 +1,24 @@
+# Handoff (2026-11-15)
+
+## Where we left off
+Five hardening changes are done and committed locally (5 commits, not pushed): CI + badge, API Host/Origin check, microphone choice, undo for saved facts, README troubleshooting. 249 Python + 23 Vitest tests pass.
+
+## Not verified (owner to check)
+- First GitHub Actions run (Linux). `setup-uv` is pinned to a commit SHA (no floating v10 tag exists).
+- A real microphone with `input_device` set (AirPods / iPhone): only a fake device list and the real `--devices` listing were run.
+- Browser click on the Undo button. State and click logic are covered by Vitest; the HTTP route was checked with curl.
+- Real Ollama was not used.
+
+## Open problems found
+- `record_cmd` and `transcribe_cmd` are missing from `src/jarvis/cli.py` (deleted on Day 25). `jarvis --record` and `--transcribe` (and `scripts/record.sh`, `scripts/transcribe.sh`) crash with NameError. `devices_cmd` was restored.
+- Never `source scripts/env.sh` from zsh: it resolves ROOT to the parent folder and `uv` creates `~/Projects/.venv`. Use `bash scripts/...`.
+- `docs/LOG.md` and `docs/PLAN.md` carried owner edits (Nov 15) that went into the item 5 commit. `tracker/jarvis-sprint.html` is still uncommitted; run `scripts/sync_tracker.py` if you want the new LOG row there.
+
+Next session: push, watch CI, then fix `--record` / `--transcribe`.
+
+---
+# Older handoff (2026-11-04, for a testing Claude)
+
 # Handoff for a testing Claude (2026-11-04)
 
 You are testing, not building. Do not change code. Report what you ran and what you saw. Repo: /Users/playmaker/Projects/Jarvis. Read CLAUDE.md first. Use `bash` for scripts (they break in zsh). Install nothing outside the repo.

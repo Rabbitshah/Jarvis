@@ -66,10 +66,11 @@ Out of scope, on purpose: online lookups (weather, web search), calendar or mail
 | 32 | Sun Nov 1 | Clean install in a new folder from the README (clean-clone-test.sh) | No undocumented steps DONE (Nov 1): fresh clone, full setup with model pull, ingest, text question with sources and spoken voice answer all worked with no undocumented step. Not tested from a fresh clone: wake word (listen.sh) |
 | 33 | Mon Nov 2 | 2 minute demo video (voice question, notes answer with sources, remember with typed y) | Recorded, linked in README PREPARED and checked on the Mac (Nov 1): all 6 demo questions answered correctly (see LOG). Recording is yours SKIPPED by your decision (Nov 3). Demo notes, scripts/demo.sh and docs/DEMO.md stay, so anyone can try it |
 | 34 | Tue Nov 3 | Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1 | Bullets written, tag pushed Text DONE (Nov 3): docs/RESUME.md. Your part: GitHub description, topics, tag v0.1 |
-| 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply |
+| 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply SKIPPED (Nov 15): no outside tester for this portfolio project; the owner tests when needed |
 | 36 | Thu Nov 5 | OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped) | Streams a reply in the browser DONE (Nov 3): `web/`, `scripts/web.sh`. Checked here against a fake model, not the real one |
+| 37 | Sun Nov 15 | Hardening: CI + badge, Origin/Host check, microphone choice, undo for saved facts, README troubleshooting | Five commits DONE (Nov 15): 249 Python + 23 Vitest tests pass locally. The first GitHub Actions run, a real microphone choice and the browser Undo click are not yet checked |
 
-Everything after Nov 5 is buffer. Deadline: Fri Dec 4.
+Added Nov 15 (from comparing three other Jarvis repos): CI with badge, Origin/Host check on the API, microphone selection, undo for saved facts, README troubleshooting. Everything else is buffer. Deadline: Fri Dec 4.
 
 ## Cut order if 2 or more days behind
 1. SRT export  2. UI source panel  3. React UI  4. Incremental ingest  5. Injection test.
