@@ -68,7 +68,7 @@ Other commands:
 | `scripts/voice.sh` | talk to Jarvis: Enter, speak, Enter; it answers in text and out loud |
 | `scripts/wake-test.sh` / `scripts/listen.sh` | live "Hey Jarvis" scores to tune the wake word / hands-free mode: say "Hey Jarvis" (or press Enter), ask, pause |
 | `scripts/piper-up.sh` / `scripts/say.sh "text"` | install and start the local Piper voice / say something with it |
-| `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones |
+| `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones and marks the system default and the one chosen by `[voice] input_device` (empty = system default; or a number or part of a name; env `JARVIS_INPUT_DEVICE`) |
 | `scripts/search-eval.sh` | checks that test questions find the right note |
 | `scripts/tune.sh` | compares chunk sizes and embedding settings, writes `docs/TUNING.md` |
 | `scripts/injection-test.sh` | plants notes that give orders, records what the model does, writes `docs/INJECTION.md` |

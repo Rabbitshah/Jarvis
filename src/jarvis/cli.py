@@ -253,6 +253,16 @@ def answer_aloud(agent, proposals, new_speaker, text: str) -> None:
               f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
 
 
+def devices_cmd() -> int:
+    from jarvis.voice.recorder import RecorderError, list_input_devices
+    try:
+        print("\n".join(list_input_devices(load_config().input_device)))
+    except RecorderError as exc:
+        print(f"error: {exc}")
+        return 1
+    return 0
+
+
 def wake_test_cmd() -> int:
     """Live wake word scores, to try 'Hey Jarvis' and to count false triggers. Ctrl+C prints a summary."""
     from jarvis.voice import recorder, wake

@@ -12,6 +12,8 @@ from typing import Callable
 
 import numpy as np
 
+from ..config import load_config
+
 SAMPLE_RATE = 16000
 MAX_SECONDS = 30
 QUIET_PEAK = 300  # int16 peak below this = almost nothing was recorded (max is 32767)
@@ -36,27 +38,61 @@ class Recording:
         return 0 < self.peak < QUIET_PEAK
 
 
+def _inputs(devices) -> list[tuple[int, dict]]:
+    return [(i, d) for i, d in enumerate(devices) if d["max_input_channels"] > 0]
+
+
+def resolve_input_device(setting: str, devices) -> int | None:
+    """[voice] input_device: "" = system default (None); a number = that device index;
+    text = first input device whose name contains it (any case). Anything else is an error that lists the choices."""
+    setting = str(setting or "").strip()
+    if not setting:
+        return None
+    inputs = _inputs(devices)
+    if setting.isdigit():
+        if int(setting) in dict(inputs):
+            return int(setting)
+    else:
+        for i, d in inputs:
+            if setting.lower() in d["name"].lower():
+                return i
+    choices = "\n".join(f"  {i}: {d['name']}" for i, d in inputs) or "  (none)"
+    raise RecorderError(f'input device "{setting}" not found. Available input devices:\n{choices}\n'
+                        "Fix [voice] input_device in config/jarvis.toml (or JARVIS_INPUT_DEVICE), or leave it empty for the system default.")
+
+
 def open_microphone(callback: Callable, blocksize: int = 0):
-    """Real microphone stream (sounddevice, imported only here)."""
+    """Real microphone stream (sounddevice, imported only here). Uses [voice] input_device."""
     try:
         import sounddevice as sd
     except (ImportError, OSError) as exc:  # OSError: PortAudio library missing
         raise RecorderError(f"audio library not available ({exc}). Run scripts/setup.sh again.") from exc
+    device = resolve_input_device(load_config().input_device, sd.query_devices())
     try:
-        return sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", blocksize=blocksize,
+        return sd.InputStream(samplerate=SAMPLE_RATE, device=device, channels=1, dtype="int16", blocksize=blocksize,
                               callback=lambda indata, frames, t, status: callback(indata))
     except sd.PortAudioError as exc:
         raise RecorderError(f"cannot open the microphone: {exc}") from exc
 
 
-def list_input_devices() -> list[str]:
+def format_input_devices(devices, default: int | None, selected: int | None) -> list[str]:
+    return [f"  {i}: {d['name']} ({int(d['default_samplerate'])} Hz)"
+            f"{'  [system default]' if i == default else ''}{'  [selected]' if i == selected else ''}"
+            for i, d in _inputs(devices)]
+
+
+def list_input_devices(setting: str = "") -> list[str]:
+    """Lines for `jarvis --devices`. Raises RecorderError if `setting` matches nothing."""
     try:
         import sounddevice as sd
     except (ImportError, OSError) as exc:
         raise RecorderError(f"audio library not available ({exc})") from exc
-    default = sd.default.device[0]
-    return [f"{'*' if i == default else ' '} {i}: {d['name']} ({int(d['default_samplerate'])} Hz)"
-            for i, d in enumerate(sd.query_devices()) if d["max_input_channels"] > 0]
+    devices = sd.query_devices()
+    selected = resolve_input_device(setting, devices)
+    lines = format_input_devices(devices, sd.default.device[0], selected)
+    if selected is not None:
+        lines.append(f'input_device "{setting}" -> {selected}: {devices[selected]["name"]}')
+    return lines
 
 
 def write_wav(path: Path, audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> None:

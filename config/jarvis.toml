@@ -47,6 +47,7 @@ stt = "mlx:mlx-community/whisper-small-mlx"
 tts_url = "http://127.0.0.1:5500"
 tts_voice = "en_US-lessac-medium"
 wake_threshold = 0.35    # wake word sensitivity: lower = triggers more easily (more false triggers). Tune with scripts/wake-test.sh
+input_device = ""   # microphone: "" = system default, or a number or part of a name from `jarvis --devices` (e.g. "MacBook"). Env JARVIS_INPUT_DEVICE
 tts_length_scale = 0.82   # speaking speed: 1.0 normal, lower = faster (0.82 is about 20% faster)
 
 [api]
