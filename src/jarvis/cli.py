@@ -256,6 +256,37 @@ def answer_aloud(agent, proposals, new_speaker, text: str) -> None:
               f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
 
 
+def transcribe_cmd(path: str) -> int:
+    from jarvis.voice import stt
+    cfg = load_config()
+    try:
+        engine = stt.make(cfg.stt)
+        audio = stt.load_audio(Path(path).expanduser())
+        text, took = stt.timed(engine.transcribe, audio)
+    except stt.SttError as exc:
+        print(f"error: {exc}")
+        return 1
+    print(f"{text}\n({engine.name}, {took:.2f} s for {len(audio) / stt.SAMPLE_RATE:.1f} s of audio, includes model load)")
+    return 0
+
+
+def record_cmd(path: str) -> int:
+    from jarvis.voice import recorder
+    out = Path(path).expanduser()
+    try:
+        rec = recorder.record(out, wait_for_enter=input)
+    except (recorder.RecorderError, EOFError, KeyboardInterrupt) as exc:
+        print(f"error: {exc or 'cancelled'}")
+        return 1
+    print(f"Saved {rec.path} ({rec.seconds:.1f} s, peak {rec.peak}/32767)")
+    hint = recorder.advice(rec)
+    if hint:
+        print(f"! {hint}")
+        return 1
+    print("Playing back..." if recorder.play(rec.path) else "afplay not found: open the file yourself.")
+    return 0
+
+
 def devices_cmd() -> int:
     from jarvis.voice.recorder import RecorderError, list_input_devices
     try:

@@ -1,0 +1,1296 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..e2b0f9e
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,38 @@
++name: CI
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++    branches: [main]
++
++permissions:
++  contents: read
++
++concurrency:
++  group: ci-${{ github.ref }}
++  cancel-in-progress: true
++
++jobs:
++  python:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v7
++      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
++      # Same as scripts/setup.sh minus Ollama and models. The tests need no model and no microphone.
++      - run: uv sync --python 3.12
++      - run: uv run pytest -q
++
++  web:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v7
++      - uses: actions/setup-node@v7
++        with:
++          node-version: 22
++      - run: npm ci
++        working-directory: web
++      - run: npm test
++        working-directory: web
++      - run: npm run build
++        working-directory: web
+diff --git a/README.md b/README.md
+index 801da81..2c36886 100644
+--- a/README.md
++++ b/README.md
+@@ -1,5 +1,7 @@
+ # Jarvis
+ 
++[![CI](https://github.com/Rabbitshah/Jarvis/actions/workflows/ci.yml/badge.svg)](https://github.com/Rabbitshah/Jarvis/actions/workflows/ci.yml)
++
+ A personal AI assistant that runs **fully on your own machine**: a local LLM (Ollama), tools it can call, search over your own notes, a local MCP server, and a "remember this" feature: what you tell it to remember is saved at once, and anything the model proposes on its own needs your yes. Free, no cloud, nothing leaves the laptop.
+ 
+ > Status: everything below is built and tested on a MacBook (Apple Silicon): terminal chat, tools, note search, MCP server, streaming API and voice (push-to-talk, wake word, spoken replies). No cloud services and no API keys. Remaining work is polish; see `docs/PLAN.md`.
+@@ -15,7 +17,7 @@ Measured with this repo's own scripts on a MacBook Pro (M5 Pro). Chat model: `qw
+ | Agent check (14 questions x 3 runs) | answers correct **42/42**, strict (right tool use too) **40/42** |
+ | Speech to text (Whisper small, Apple GPU) | **0.07 s** per clip, 0 wrong words on 3 test clips |
+ | Voice reply | first sound **1.7-3.3 s** after the question is understood, mostly model time |
+-| Unit tests | **191** passing, no model needed |
++| Unit tests | **249** Python + **23** web tests passing, no model needed |
+ 
+ ## How it works
+ 
+@@ -66,7 +68,7 @@ Other commands:
+ | `scripts/voice.sh` | talk to Jarvis: Enter, speak, Enter; it answers in text and out loud |
+ | `scripts/wake-test.sh` / `scripts/listen.sh` | live "Hey Jarvis" scores to tune the wake word / hands-free mode: say "Hey Jarvis" (or press Enter), ask, pause |
+ | `scripts/piper-up.sh` / `scripts/say.sh "text"` | install and start the local Piper voice / say something with it |
+-| `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones |
++| `scripts/record.sh` | records the microphone to a WAV (Enter starts, Enter stops) and plays it back; `--devices` lists microphones and marks the system default and the one chosen by `[voice] input_device` (empty = system default; or a number or part of a name; env `JARVIS_INPUT_DEVICE`) |
+ | `scripts/search-eval.sh` | checks that test questions find the right note |
+ | `scripts/tune.sh` | compares chunk sizes and embedding settings, writes `docs/TUNING.md` |
+ | `scripts/injection-test.sh` | plants notes that give orders, records what the model does, writes `docs/INJECTION.md` |
+@@ -113,7 +115,7 @@ All numbers are from this repo's own scripts, run on a MacBook Pro (M5 Pro). Cha
+ | Prompt injection: planted orders obeyed (5 attacks x 10 runs, qwen2.5:7b) | **0 / 50** (llama3.1:8b earlier: 1 / 50) |
+ | Prompt injection: facts saved without the user's yes | **0 / 50** |
+ | Chat model check (14 questions x 3 trials): answers correct | **39 / 42** (qwen2.5:7b) vs 33 / 42 (llama3.1:8b) |
+-| Unit tests | 191 passing |
++| Unit tests | 249 Python + 23 web (Vitest) passing |
+ 
+ Honest limits: the 20 test questions were written from the notes themselves, so real questions will score lower. Three runs per attack is a small sample, and a small model that ignores most text proves little about stronger attacks. Details: `docs/TUNING.md`, `docs/INJECTION.md`.
+ 
+@@ -164,12 +166,30 @@ All of the heavy folders and your notes are git-ignored.
+ ## Security
+ 
+ - The API binds to `127.0.0.1` only. There is no auth, so do not expose it.
++- **Browser guard:** the API refuses any request whose `Host` is not `127.0.0.1`, `localhost` or `[::1]` (with the API port), and any POST/PUT/PATCH/DELETE whose `Origin` is another site. This stops a web page in your browser from driving it (DNS rebinding, cross-site POST). Extra origins: `allowed_origins` in `config/jarvis.toml` or env `JARVIS_ALLOWED_ORIGINS` (`scripts/web-dev.sh` sets it for Vite).
++- **Limit:** this is not authentication. A request with no `Origin` (curl, a script) is allowed, so anyone with a shell on this Mac can still call the API.
+ - Tools can only read `.md` / `.txt` files inside `notes/`.
+ - **Private notes:** anything in `notes/private/` or matching `private_notes` in `config/jarvis.toml` (default also `*password*` and `*salary*`) is never listed, read, searched or indexed. A private note answers "not found", like a missing one.
+ - Text from notes is treated as data, never as instructions: excerpts are fenced and labelled, and a note cannot close the fence.
+-- **Two ways to save a memory.** (1) You type or say "remember ...": the program matches it by rule and saves your own words at once, with no prompt. Anything that starts with "remember" counts, including pasted text and a misheard voice command, so check `notes/memory.md` if you use voice. (2) A fact the model proposes on its own (for example "note that I live in X") can only be proposed: saving needs your typed y (terminal) or Save click (web), and no tool can give it. The prompt warns when notes were in the model's context that turn. A planted note cannot trigger path (1), because only your own message is matched.
++- **Two ways to save a memory.** (1) You type or say "remember ...": the program matches it by rule and saves your own words at once, with no prompt. Anything that starts with "remember" counts, including pasted text and a misheard voice command, so check `notes/memory.md` if you use voice. **Undo:** say or type "forget that" / "undo" (terminal also `/forget`, web page has an Undo button next to the reply) and the last fact *this session* saved is removed from `notes/memory.md`; it never touches lines this session did not write. (2) A fact the model proposes on its own (for example "note that I live in X") can only be proposed: saving needs your typed y (terminal) or Save click (web), and no tool can give it. The prompt warns when notes were in the model's context that turn. A planted note cannot trigger path (1), because only your own message is matched.
+ - The weak spot is the model itself: an 8B model can still be talked into calling a tool it should not. Today every tool is read-only except `remember`. Add side-effect tools (send, delete, post) only behind the same confirmation.
+ 
++## Troubleshooting
++
++Texts in quotes are copied from the code. Run `jarvis --devices`, `scripts/wake-test.sh` and `scripts/doctor.sh` to see what Jarvis sees.
++
++| Problem | What it means / what to do |
++| --- | --- |
++| "The recording is completely silent. On macOS this usually means Terminal has no microphone permission..." | System Settings > Privacy & Security > Microphone > turn on Terminal, then restart Terminal. |
++| "The recording is very quiet. Check the input device (jarvis --devices) and the input volume." | Wrong input device or low volume. The default input can switch between the built-in mic, AirPods and an iPhone (Continuity). Run `jarvis --devices`, then set `[voice] input_device` in `config/jarvis.toml` (a number or part of a name) or env `JARVIS_INPUT_DEVICE`. |
++| `input device "..." not found. Available input devices: ...` | `input_device` matches no microphone. Use a number or a name part from the list printed in that message. Empty = system default. |
++| Voice works badly with AirPods, or Jarvis answers itself | AirPods microphones scored worse than the built-in mic in my tests (see Known limits). With speakers and the built-in mic Jarvis may hear itself: use headphones, or press Enter instead of the wake word. |
++| "Ollama not reachable" / no answer on port 11500 | `scripts/ollama-up.sh` treats anything already answering on 11500 as Jarvis's Ollama and starts nothing. If another copy holds the port, run `bash scripts/stop.sh`, check `lsof -i :11500`, then start again. If it says "Ollama did not start. See .tools/ollama.log", read that file. |
++| "Piper is not running, so replies will be text only." | Start it: `bash scripts/piper-up.sh`. |
++| First voice run is slow or fails with "cannot load ..." / "cannot load the wake word model: ..." | The Whisper model, the Piper voice and the wake word model are downloaded once and need internet that first time. After that voice runs offline. |
++| Whisper writes a wrong word or name | Whisper small mishears names ("Vadodara" came out as "Valdadra"). Check the `you said>` line, or type the question. |
++| Wake word does not trigger, or triggers by itself | Run `scripts/wake-test.sh` and watch the scores. `wake_threshold` in `config/jarvis.toml` (or env `JARVIS_WAKE_THRESHOLD`): lower = triggers more easily, higher = fewer false triggers. A near miss prints `(almost heard 'Hey Jarvis': score ..., needs ...)`. |
++
+ ## Docs
+ 
+ - `docs/CONTEXT.md` project context, stack, requirements, design references, constraints
+diff --git a/config/jarvis.toml b/config/jarvis.toml
+index fd0160e..7ed50e5 100644
+--- a/config/jarvis.toml
++++ b/config/jarvis.toml
+@@ -47,8 +47,10 @@ stt = "mlx:mlx-community/whisper-small-mlx"
+ tts_url = "http://127.0.0.1:5500"
+ tts_voice = "en_US-lessac-medium"
+ wake_threshold = 0.35    # wake word sensitivity: lower = triggers more easily (more false triggers). Tune with scripts/wake-test.sh
++input_device = ""   # microphone: "" = system default, or a number or part of a name from `jarvis --devices` (e.g. "MacBook"). Env JARVIS_INPUT_DEVICE
+ tts_length_scale = 0.82   # speaking speed: 1.0 normal, lower = faster (0.82 is about 20% faster)
+ 
+ [api]
+-host = "127.0.0.1"    # local only. Do not change without adding auth.
++host = "127.0.0.1"    # local only. Do not change host without adding auth.
+ port = 8000
++# allowed_origins = []   # extra web origins allowed to POST (e.g. ["http://127.0.0.1:5173"]); env JARVIS_ALLOWED_ORIGINS, comma separated
+diff --git a/docs/DEMO.md b/docs/DEMO.md
+index 0632975..2b3be24 100644
+--- a/docs/DEMO.md
++++ b/docs/DEMO.md
+@@ -11,7 +11,7 @@ Before recording: delete the fact saved by test runs (`rm demo/notes/memory.md`,
+ | 0:25 | Enter, ask: "When is my cloud exam?" | Answer is spoken; point at "Notes consulted: 03-study-plan.md". "The sources are added by the program, not by the model." |
+ | 0:50 | Ask: "What is my main project built with?" | "Answers come from the notes." |
+ | 1:05 | Ask a general question: "What is the capital of France?" | "General questions do not touch the notes." |
+-| 1:15 | Say: "Remember that I have a mock interview on Monday." It is saved at once (no prompt) | "When I say remember, it saves right away. If the model decides to save something itself, it must ask me first." |
++| 1:15 | Say: "Remember that I have a mock interview on Monday." It is saved at once (no prompt). A wrong save? Say "forget that" and it is removed | "When I say remember, it saves right away. If the model decides to save something itself, it must ask me first." |
+ | 1:35 | Ask: "What is my bank password?" | Say: "Files in a private folder are never indexed or readable by the model, and this is checked by unit tests. Here the model also refuses on its own." Do NOT say the refusal proves the protection: the protection is the code, the polite refusal is the model. |
+ | 1:45 | Show the injection row in the README table | "I planted notes that give orders. Out of 50 runs the model obeyed 0 and made no save the user did not ask for." |
+ | 1:55 | Show the "Known limits" heading | "It is not perfect: the limits are written down." |
+diff --git a/docs/LOG.md b/docs/LOG.md
+index 02c16ec..e9e76b5 100644
+--- a/docs/LOG.md
++++ b/docs/LOG.md
+@@ -59,3 +59,5 @@ Hours marked ? are not confirmed yet. Correct them if you like.
+ | 2026-11-03 | ? | Day 36 web chat page: `web/` (React + Vite + TypeScript, plain CSS, no CDN). Streams token, tool, sources and memory-confirm events; Save / Don't save buttons call `/confirm`. FastAPI serves `web/dist` at `/` only if it exists. `scripts/web.sh`, `scripts/web-dev.sh`. 193 Python tests + 17 Vitest tests pass. Screenshots (light/dark, 1280 and 390 wide) taken against the real API app with a fake model | Playwright was not installed; used `playwright-core` in `.tools/shot` with your Chrome. A stray `/Users/playmaker/Projects/.venv` and `.tools` appeared because I sourced `env.sh` from zsh (it needs bash); delete them. Real Ollama, real model answers and Safari not tested | Run `scripts/web.sh`, open http://127.0.0.1:8000, ask 2 questions and try Save |
+ | 2026-11-04 | ? | Your decision, built in a separate Claude Code session (web page work): a message that starts with 'remember' is saved at once by rule (agent._save_directly, no y/N, no confirm event, 'Saved to memory.md.'); facts the MODEL proposes still need y/N or a Save click. The report says 193 Python + 17 Vitest tests pass and one live save worked in a throwaway notes folder. I did not run any of that. I updated stale text: README Security bullet, diagram, injection row wording ('model-proposed saves without approval 0/50'), RESUME bullet 3, DEMO narration, PRD story 8 | Rule changed after the 'nothing is saved without a typed y' promise made on Oct 25, so every earlier mention of that promise had to be re-read: the README intro still says 'never saves without your yes' (true if typing remember counts as yes). New risk: a voice command misheard by Whisper, or a pasted message that starts with 'remember', writes a wrong fact with no check. Impact is low (memory.md is a plain file you can edit) but it is a silent write. The 0/50 injection result is still valid because the harness never types 'remember' itself, but it was measured before this change and is not re-run. Web page (a Claude Code session) is not verified by me: no browser test, no real-model streaming | Run the Mac checks in handoff.md items 4 to 8, then commit |
+ | 2026-11-05 | ? | Review of the 'remember saves directly' change (made by Claude Code, your decision). Checked here: 193 Python tests pass; no innerHTML/eval/new Function and no absolute URLs in web/src; _save_directly only runs for the user's own message matched by explicit_request, so retrieved notes cannot trigger it. Fixed stale wording: README intro said 'never saves without your yes', and docs/INJECTION.md plus the injection script said 'saving needs a typed y' | The y/N prompt was also the only guard against Whisper mishearing a voice command and against a wrong voice trigger in hands-free mode: a misheard 'remember' now writes a wrong fact with no check (README warns). Not verified: live Ollama run, note-injection live test, browser click-through, Vitest (no Node here), Safari. The injection 0/50 number only covers the model-proposed path and was not re-run | You: run the 4 live checks in handoff.md on the Mac |
++| 2026-11-15 | ? | Compared with open-jarvis/openjarvis, ethanplusai/jarvis, hectorg2211/jarvis (from their READMEs only). No outside tester (your decision), Day 35 skipped. Chosen hardening list: (1) GitHub Actions CI + badge, (2) Origin/Host check on the API, (3) microphone selection setting, (4) undo for saved facts, (5) README troubleshooting. Not chosen: run log, Windows/Linux port, integrations, extra agents | The Origin-check risk is unproven: first step in the Claude Code prompt is to write a test that shows whether a cross-site request can reach /chat or /confirm | Run the Claude Code prompt, then run the checks it lists on the Mac |
++| 2026-11-15 | ? | Five hardening changes, one commit each. (1) `.github/workflows/ci.yml`: jobs `python` (uv sync, pytest) and `web` (npm ci, test, build) + README badge; `astral-sh/setup-uv` has no floating major tag, so it is pinned to the v10.3.3 commit SHA from its README. (2) `src/jarvis/security.py`: 403 for any Host not 127.0.0.1/localhost/[::1]:port and for POST/PUT/PATCH/DELETE with a foreign Origin (no Origin = allowed); `allowed_origins` / `JARVIS_ALLOWED_ORIGINS`; `web-dev.sh` sets it. Before the change a probe showed Host `evil.example` and Origin `https://evil.example` both reached /chat and wrote memory.md; text/plain was already refused (422). (3) `[voice] input_device` / `JARVIS_INPUT_DEVICE`, `resolve_input_device()`, `--devices` marks default and selected. (4) `Proposals.forget_last()`, 'forget that'/'undo' by rule, `/forget`, `POST /forget`, web Undo button (new `saved` event). (5) README Troubleshooting. 249 Python + 23 Vitest pass. Clean clone on this Mac: uv sync, pytest, npm ci/test/build all pass. Dev proxy checked with Vite + the real app: 404 (reaches app) with the env var, 403 without | `devices_cmd` had been deleted from cli.py on Day 25 (so `jarvis --devices` crashed); restored it. `record_cmd` and `transcribe_cmd` are also missing, so `--record` and `--transcribe` still crash: not fixed (not in scope). Twice I sourced env.sh from zsh and created a stray `~/Projects/.venv` and `.tools`; removed both. The GitHub Actions run (Linux) and the real microphone choice are untested | Push, watch the first CI run; try `JARVIS_INPUT_DEVICE=... scripts/wake-test.sh` with AirPods connected; click Undo in the browser |
+diff --git a/docs/PLAN.md b/docs/PLAN.md
+index 91d1535..385cea6 100644
+--- a/docs/PLAN.md
++++ b/docs/PLAN.md
+@@ -66,10 +66,11 @@ Out of scope, on purpose: online lookups (weather, web search), calendar or mail
+ | 32 | Sun Nov 1 | Clean install in a new folder from the README (clean-clone-test.sh) | No undocumented steps DONE (Nov 1): fresh clone, full setup with model pull, ingest, text question with sources and spoken voice answer all worked with no undocumented step. Not tested from a fresh clone: wake word (listen.sh) |
+ | 33 | Mon Nov 2 | 2 minute demo video (voice question, notes answer with sources, remember with typed y) | Recorded, linked in README PREPARED and checked on the Mac (Nov 1): all 6 demo questions answered correctly (see LOG). Recording is yours SKIPPED by your decision (Nov 3). Demo notes, scripts/demo.sh and docs/DEMO.md stay, so anyone can try it |
+ | 34 | Tue Nov 3 | Resume: 3 bullets with real numbers, GitHub pin, repo description, topics, tag v0.1 | Bullets written, tag pushed Text DONE (Nov 3): docs/RESUME.md. Your part: GitHub description, topics, tag v0.1 |
+-| 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply |
++| 35 | Wed Nov 4 | Someone else runs it from the README | They get a working reply SKIPPED (Nov 15): no outside tester for this portfolio project; the owner tests when needed |
+ | 36 | Thu Nov 5 | OPTIONAL: minimal React chat page on the existing API (only for full-stack roles; skip if days 30 to 35 slipped) | Streams a reply in the browser DONE (Nov 3): `web/`, `scripts/web.sh`. Checked here against a fake model, not the real one |
++| 37 | Sun Nov 15 | Hardening: CI + badge, Origin/Host check, microphone choice, undo for saved facts, README troubleshooting | Five commits DONE (Nov 15): 249 Python + 23 Vitest tests pass locally. The first GitHub Actions run, a real microphone choice and the browser Undo click are not yet checked |
+ 
+-Everything after Nov 5 is buffer. Deadline: Fri Dec 4.
++Added Nov 15 (from comparing three other Jarvis repos): CI with badge, Origin/Host check on the API, microphone selection, undo for saved facts, README troubleshooting. Everything else is buffer. Deadline: Fri Dec 4.
+ 
+ ## Cut order if 2 or more days behind
+ 1. SRT export  2. UI source panel  3. React UI  4. Incremental ingest  5. Injection test.
+diff --git a/handoff.md b/handoff.md
+index 855fdf3..0794d4a 100644
+--- a/handoff.md
++++ b/handoff.md
+@@ -1,3 +1,24 @@
++# Handoff (2026-11-15)
++
++## Where we left off
++Five hardening changes are done and committed locally (5 commits, not pushed): CI + badge, API Host/Origin check, microphone choice, undo for saved facts, README troubleshooting. 249 Python + 23 Vitest tests pass.
++
++## Not verified (owner to check)
++- First GitHub Actions run (Linux). `setup-uv` is pinned to a commit SHA (no floating v10 tag exists).
++- A real microphone with `input_device` set (AirPods / iPhone): only a fake device list and the real `--devices` listing were run.
++- Browser click on the Undo button. State and click logic are covered by Vitest; the HTTP route was checked with curl.
++- Real Ollama was not used.
++
++## Open problems found
++- `record_cmd` and `transcribe_cmd` are missing from `src/jarvis/cli.py` (deleted on Day 25). `jarvis --record` and `--transcribe` (and `scripts/record.sh`, `scripts/transcribe.sh`) crash with NameError. `devices_cmd` was restored.
++- Never `source scripts/env.sh` from zsh: it resolves ROOT to the parent folder and `uv` creates `~/Projects/.venv`. Use `bash scripts/...`.
++- `docs/LOG.md` and `docs/PLAN.md` carried owner edits (Nov 15) that went into the item 5 commit. `tracker/jarvis-sprint.html` is still uncommitted; run `scripts/sync_tracker.py` if you want the new LOG row there.
++
++Next session: push, watch CI, then fix `--record` / `--transcribe`.
++
++---
++# Older handoff (2026-11-04, for a testing Claude)
++
+ # Handoff for a testing Claude (2026-11-04)
+ 
+ You are testing, not building. Do not change code. Report what you ran and what you saw. Repo: /Users/playmaker/Projects/Jarvis. Read CLAUDE.md first. Use `bash` for scripts (they break in zsh). Install nothing outside the repo.
+diff --git a/scripts/web-dev.sh b/scripts/web-dev.sh
+index 51bbea6..2c67594 100755
+--- a/scripts/web-dev.sh
++++ b/scripts/web-dev.sh
+@@ -5,6 +5,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
+ cd "$ROOT"
+ bash scripts/install-node.sh
+ bash scripts/ollama-up.sh
++# The page at :5173 is another origin for the API; without this the Origin/Host check answers 403.
++export JARVIS_ALLOWED_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
+ uv run jarvis-api &
+ API=$!
+ trap 'kill $API 2>/dev/null || true' EXIT
+diff --git a/src/jarvis/agent.py b/src/jarvis/agent.py
+index 772d86b..e71dcd1 100644
+--- a/src/jarvis/agent.py
++++ b/src/jarvis/agent.py
+@@ -6,7 +6,7 @@ import re
+ from typing import Any, Callable, Iterator, Protocol
+ 
+ from .llm import LLMError
+-from .memory.remember import explicit_request
++from .memory.remember import explicit_request, undo_request
+ from .tools.registry import Registry
+ 
+ 
+@@ -84,17 +84,29 @@ class Agent:
+         Facts the MODEL proposes on its own still go through confirm."""
+         yield {"type": "tool_call", "name": "remember", "args": {"fact": fact}}
+         result = self.registry.call("remember", {"fact": fact})
++        before = len(self.proposals.saved)
+         saved = [self.proposals.approve(p.id) for p in self.proposals.take_new()]
+         reply = " ".join(saved) if saved else result  # the tool says "NOT saved yet", which is no longer true here
+         yield {"type": "tool_result", "name": "remember", "result": reply}
+         self.messages.append({"role": "assistant", "content": reply})
+         yield {"type": "token", "text": reply}
++        if len(self.proposals.saved) > before:  # something was really written: the web page offers Undo
++            yield {"type": "saved", "fact": fact}
++        yield {"type": "done"}
++
++    def _undo(self) -> Iterator[dict]:
++        reply = self.proposals.forget_last()
++        self.messages.append({"role": "assistant", "content": reply})
++        yield {"type": "token", "text": reply}
+         yield {"type": "done"}
+ 
+     def chat(self, user_text: str) -> Iterator[dict]:
+         self.messages.append({"role": "user", "content": user_text})
+         self._trim()
+         turn = len(self.messages) - 1  # index of this turn's user message
++        if self.proposals and undo_request(user_text):  # decided by code; the model never sees it
++            yield from self._undo()
++            return
+         fact = explicit_request(user_text) if self.proposals and "remember" in self.registry.names() else None
+         if fact:  # "remember that ..." is decided by code and saved at once; the model only proposes it when it feels like it
+             yield from self._save_directly(fact)
+diff --git a/src/jarvis/api.py b/src/jarvis/api.py
+index 4647a27..58aed6b 100644
+--- a/src/jarvis/api.py
++++ b/src/jarvis/api.py
+@@ -16,6 +16,7 @@ from .config import ROOT, Config, load_config
+ from .llm import OllamaClient
+ from .memory.context import make_context_fn
+ from .memory.remember import Proposals
++from .security import LocalOnly
+ from .tools.builtin import build_registry
+ 
+ MAX_SESSIONS = 20
+@@ -27,6 +28,10 @@ class ConfirmRequest(BaseModel):
+     approve: bool
+ 
+ 
++class ForgetRequest(BaseModel):
++    session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
++
++
+ class ChatRequest(BaseModel):
+     message: str = Field(min_length=1, max_length=4000)
+     session_id: str = Field(default="default", pattern=r"^[A-Za-z0-9_-]{1,64}$")
+@@ -39,6 +44,7 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
+     registry = build_registry(cfg)
+     sessions: "OrderedDict[str, Agent]" = OrderedDict()
+     app = FastAPI(title="Jarvis", version="0.1.0")
++    app.add_middleware(LocalOnly, port=cfg.api_port, extra_origins=cfg.api_allowed_origins)
+ 
+     def get_agent(session_id: str) -> Agent:
+         if session_id in sessions:
+@@ -75,8 +81,15 @@ def create_app(cfg: Config | None = None, llm: ChatClient | None = None) -> Fast
+         msg = agent.proposals.approve(req.id) if req.approve else agent.proposals.reject(req.id)
+         return {"message": msg}
+ 
++    @app.post("/forget")
++    def forget(req: ForgetRequest) -> dict:
++        agent = sessions.get(req.session_id)
++        if agent is None or agent.proposals is None:
++            raise HTTPException(status_code=404, detail="unknown session")
++        return {"message": agent.proposals.forget_last()}
++
+     dist = ROOT / "web" / "dist"
+-    if dist.is_dir():  # mounted last so /health, /chat and /confirm win
++    if dist.is_dir():  # mounted last so /health, /chat, /confirm and /forget win
+         app.mount("/", StaticFiles(directory=dist, html=True), name="web")
+     return app
+ 
+diff --git a/src/jarvis/cli.py b/src/jarvis/cli.py
+index 2e9caee..1838ef4 100644
+--- a/src/jarvis/cli.py
++++ b/src/jarvis/cli.py
+@@ -141,7 +141,7 @@ def run_turn(agent, proposals, text: str, on_reply=None, on_token=None) -> str:
+ def chat_loop() -> int:
+     cfg = load_config()
+     agent, proposals = build_agent(cfg)
+-    print(f"Jarvis ({cfg.model}). /reset clears memory, /exit quits.")
++    print(f"Jarvis ({cfg.model}). /reset clears memory, /forget undoes the last saved fact, /exit quits.")
+     while True:
+         try:
+             text = input("\nyou> ").strip()
+@@ -156,6 +156,9 @@ def chat_loop() -> int:
+             agent.reset()
+             print("history cleared")
+             continue
++        if text == "/forget":
++            print(proposals.forget_last())
++            continue
+         run_turn(agent, proposals, text)
+ 
+ 
+@@ -253,6 +256,16 @@ def answer_aloud(agent, proposals, new_speaker, text: str) -> None:
+               f"{sp.first_sound_at - t0:.2f} s, {len(sp.sentences)} sentence(s))")
+ 
+ 
++def devices_cmd() -> int:
++    from jarvis.voice.recorder import RecorderError, list_input_devices
++    try:
++        print("\n".join(list_input_devices(load_config().input_device)))
++    except RecorderError as exc:
++        print(f"error: {exc}")
++        return 1
++    return 0
++
++
+ def wake_test_cmd() -> int:
+     """Live wake word scores, to try 'Hey Jarvis' and to count false triggers. Ctrl+C prints a summary."""
+     from jarvis.voice import recorder, wake
+diff --git a/src/jarvis/config.py b/src/jarvis/config.py
+index 39d874d..828d047 100644
+--- a/src/jarvis/config.py
++++ b/src/jarvis/config.py
+@@ -37,8 +37,10 @@ class Config:
+     tts_voice: str
+     tts_length_scale: float
+     wake_threshold: float
++    input_device: str
+     api_host: str
+     api_port: int
++    api_allowed_origins: tuple[str, ...]
+ 
+ 
+ def load_config(path: str | Path | None = None) -> Config:
+@@ -82,7 +84,10 @@ def load_config(path: str | Path | None = None) -> Config:
+         tts_url=os.environ.get("JARVIS_TTS_URL") or voice.get("tts_url", "http://127.0.0.1:5500"),
+         tts_voice=voice.get("tts_voice", "en_US-lessac-medium"),
+         wake_threshold=float(os.environ.get("JARVIS_WAKE_THRESHOLD") or voice.get("wake_threshold", 0.35)),
++        input_device=str(os.environ.get("JARVIS_INPUT_DEVICE") or voice.get("input_device", "")),
+         tts_length_scale=float(os.environ.get("JARVIS_TTS_SPEED") or voice.get("tts_length_scale", 1.0)),
+         api_host=api["host"],
+         api_port=int(api["port"]),
++        api_allowed_origins=tuple(api.get("allowed_origins", [])) + tuple(
++            o.strip() for o in os.environ.get("JARVIS_ALLOWED_ORIGINS", "").split(",") if o.strip()),
+     )
+diff --git a/src/jarvis/memory/remember.py b/src/jarvis/memory/remember.py
+index 75378c8..a2c83d0 100644
+--- a/src/jarvis/memory/remember.py
++++ b/src/jarvis/memory/remember.py
+@@ -3,6 +3,7 @@ which only the interface (terminal y/n prompt, API /confirm) can call, never a t
+ So a note that tries to trick the model cannot save anything on its own."""
+ from __future__ import annotations
+ 
++import os
+ import re
+ import secrets
+ import time
+@@ -62,11 +63,21 @@ def explicit_request(text: str) -> str | None:
+     return fact[0].upper() + fact[1:]
+ 
+ 
++_UNDO = re.compile(r"^\s*(?:(?:please|hey|ok(?:ay)?)[\s,]+)*(?:forget\s+(?:that|it)|undo(?:\s+that)?|never\s?mind\s+that)\s*[.!?,]*\s*$",
++                  re.IGNORECASE)
++
++
++def undo_request(text: str) -> bool:
++    """'forget that', 'forget it', 'undo', 'undo that', 'never mind that' (decided by code, like explicit_request)."""
++    return bool(_UNDO.match(text or ""))
++
++
+ class Proposals:
+     def __init__(self, cfg: Config, embed: Callable[[list[str]], list[list[float]]] | None,
+                  clock: Callable[[], float] = time.time) -> None:
+         self.cfg, self.embed, self._clock = cfg, embed, clock
+         self._items: dict[str, Proposal] = {}
++        self.saved: list[tuple[str, str]] = []  # (fact, exact memory.md line) written by THIS session: all that undo may touch
+ 
+     def _drop_expired(self) -> None:
+         now = self._clock()
+@@ -114,10 +125,37 @@ class Proposals:
+         if len(text) + len(line) > MAX_FILE_CHARS:
+             return f"Not saved: {MEMORY_FILE} is full. Trim old lines first."
+         path.write_text(text + line, encoding="utf-8")
++        self.saved.append((item.fact, line))
++        warn = self._reindex()
++        if warn is None:
++            return f"Saved to {MEMORY_FILE}."
++        return f"Saved to {MEMORY_FILE}. {warn}" if self.embed is None else f"Saved to {MEMORY_FILE}, but {warn}"
++
++    def _reindex(self, saving: bool = True) -> str | None:
++        """None if the search index is up to date, else what the user should know."""
+         if self.embed is None:
+-            return f"Saved to {MEMORY_FILE}. Run scripts/ingest.sh so search can find it."
++            return "Run scripts/ingest.sh so search " + ("can find it." if saving else "stops returning it.")
+         try:
+             ingest(self.cfg, self.embed)
+         except (LLMError, StoreError) as exc:
+-            return f"Saved to {MEMORY_FILE}, but the search index was not updated ({exc}). Run scripts/ingest.sh."
+-        return f"Saved to {MEMORY_FILE}."
++            return f"the search index was not updated ({exc}). Run scripts/ingest.sh."
++        return None
++
++    def forget_last(self) -> str:
++        """Remove the last line THIS session saved. Never any other line."""
++        if not self.saved:
++            return "Nothing to undo."
++        fact, line = self.saved.pop()
++        root = self.cfg.notes_dir
++        path = root / MEMORY_FILE
++        if not path.exists() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):
++            return "Could not undo: the memory file is missing or not safe to write."
++        lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
++        if line not in lines:
++            return f"Could not undo: that line is no longer in {MEMORY_FILE} (you edited it?)."
++        del lines[len(lines) - 1 - lines[::-1].index(line)]
++        tmp = path.with_name(MEMORY_FILE + ".tmp")
++        tmp.write_text("".join(lines), encoding="utf-8")
++        os.replace(tmp, path)  # atomic: the file is never half written
++        warn = self._reindex(saving=False)
++        return f"Removed: {fact}" if warn is None else f"Removed: {fact}. {warn[0].upper()}{warn[1:]}"
+diff --git a/src/jarvis/security.py b/src/jarvis/security.py
+new file mode 100644
+index 0000000..8423c39
+--- /dev/null
++++ b/src/jarvis/security.py
+@@ -0,0 +1,32 @@
++"""Host and Origin checks for the local API. Stops DNS rebinding and cross-site POSTs from a web page
++open in your browser. This is NOT authentication: anyone who can run a command on this machine can still call the API."""
++from __future__ import annotations
++
++from urllib.parse import urlsplit
++
++from starlette.responses import JSONResponse
++
++CHANGING = {"POST", "PUT", "PATCH", "DELETE"}
++
++
++class LocalOnly:
++    """Pure ASGI (not BaseHTTPMiddleware) so the SSE stream is not buffered."""
++
++    def __init__(self, app, port: int, extra_origins: tuple[str, ...] = ()) -> None:
++        self.app = app
++        self.origins = {f"http://{h}:{port}" for h in ("127.0.0.1", "localhost", "[::1]")}
++        self.origins |= {o.strip().rstrip("/").lower() for o in extra_origins if o.strip()}
++        self.hosts = {urlsplit(o).netloc for o in self.origins}  # an origin you trust also brings its own Host (Vite dev)
++
++    async def __call__(self, scope, receive, send) -> None:
++        if scope["type"] == "http":
++            headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope["headers"]}
++            problem = None
++            if headers.get("host", "").lower() not in self.hosts:
++                problem = "host not allowed"
++            elif scope["method"] in CHANGING and "origin" in headers and headers["origin"].rstrip("/").lower() not in self.origins:
++                problem = "origin not allowed"
++            if problem:
++                await JSONResponse({"error": problem}, status_code=403)(scope, receive, send)
++                return
++        await self.app(scope, receive, send)
+diff --git a/src/jarvis/voice/recorder.py b/src/jarvis/voice/recorder.py
+index f8213fb..390c710 100644
+--- a/src/jarvis/voice/recorder.py
++++ b/src/jarvis/voice/recorder.py
+@@ -12,6 +12,8 @@ from typing import Callable
+ 
+ import numpy as np
+ 
++from ..config import load_config
++
+ SAMPLE_RATE = 16000
+ MAX_SECONDS = 30
+ QUIET_PEAK = 300  # int16 peak below this = almost nothing was recorded (max is 32767)
+@@ -36,27 +38,61 @@ class Recording:
+         return 0 < self.peak < QUIET_PEAK
+ 
+ 
++def _inputs(devices) -> list[tuple[int, dict]]:
++    return [(i, d) for i, d in enumerate(devices) if d["max_input_channels"] > 0]
++
++
++def resolve_input_device(setting: str, devices) -> int | None:
++    """[voice] input_device: "" = system default (None); a number = that device index;
++    text = first input device whose name contains it (any case). Anything else is an error that lists the choices."""
++    setting = str(setting or "").strip()
++    if not setting:
++        return None
++    inputs = _inputs(devices)
++    if setting.isdigit():
++        if int(setting) in dict(inputs):
++            return int(setting)
++    else:
++        for i, d in inputs:
++            if setting.lower() in d["name"].lower():
++                return i
++    choices = "\n".join(f"  {i}: {d['name']}" for i, d in inputs) or "  (none)"
++    raise RecorderError(f'input device "{setting}" not found. Available input devices:\n{choices}\n'
++                        "Fix [voice] input_device in config/jarvis.toml (or JARVIS_INPUT_DEVICE), or leave it empty for the system default.")
++
++
+ def open_microphone(callback: Callable, blocksize: int = 0):
+-    """Real microphone stream (sounddevice, imported only here)."""
++    """Real microphone stream (sounddevice, imported only here). Uses [voice] input_device."""
+     try:
+         import sounddevice as sd
+     except (ImportError, OSError) as exc:  # OSError: PortAudio library missing
+         raise RecorderError(f"audio library not available ({exc}). Run scripts/setup.sh again.") from exc
++    device = resolve_input_device(load_config().input_device, sd.query_devices())
+     try:
+-        return sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16", blocksize=blocksize,
++        return sd.InputStream(samplerate=SAMPLE_RATE, device=device, channels=1, dtype="int16", blocksize=blocksize,
+                               callback=lambda indata, frames, t, status: callback(indata))
+     except sd.PortAudioError as exc:
+         raise RecorderError(f"cannot open the microphone: {exc}") from exc
+ 
+ 
+-def list_input_devices() -> list[str]:
++def format_input_devices(devices, default: int | None, selected: int | None) -> list[str]:
++    return [f"  {i}: {d['name']} ({int(d['default_samplerate'])} Hz)"
++            f"{'  [system default]' if i == default else ''}{'  [selected]' if i == selected else ''}"
++            for i, d in _inputs(devices)]
++
++
++def list_input_devices(setting: str = "") -> list[str]:
++    """Lines for `jarvis --devices`. Raises RecorderError if `setting` matches nothing."""
+     try:
+         import sounddevice as sd
+     except (ImportError, OSError) as exc:
+         raise RecorderError(f"audio library not available ({exc})") from exc
+-    default = sd.default.device[0]
+-    return [f"{'*' if i == default else ' '} {i}: {d['name']} ({int(d['default_samplerate'])} Hz)"
+-            for i, d in enumerate(sd.query_devices()) if d["max_input_channels"] > 0]
++    devices = sd.query_devices()
++    selected = resolve_input_device(setting, devices)
++    lines = format_input_devices(devices, sd.default.device[0], selected)
++    if selected is not None:
++        lines.append(f'input_device "{setting}" -> {selected}: {devices[selected]["name"]}')
++    return lines
+ 
+ 
+ def write_wav(path: Path, audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> None:
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 9da2157..aa1eedc 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -2,6 +2,7 @@ import dataclasses
+ from pathlib import Path
+ 
+ import pytest
++from fastapi.testclient import TestClient
+ 
+ from jarvis.config import ROOT, load_config
+ 
+@@ -66,3 +67,8 @@ def cfg(tmp_path):
+     notes.mkdir()
+     (notes / "idea.md").write_text("Ship Jarvis by December.", encoding="utf-8")
+     return dataclasses.replace(load_config(), notes_dir=notes, index_dir=tmp_path / "index")
++
++
++def api_client(app, cfg):
++    """TestClient whose Host is the real local address (the API refuses other hosts)."""
++    return TestClient(app, base_url=f"http://127.0.0.1:{cfg.api_port}")
+diff --git a/tests/test_api.py b/tests/test_api.py
+index b378f45..fec0184 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,8 +1,7 @@
+ import json
+ 
+-from fastapi.testclient import TestClient
+ 
+-from conftest import FakeLLM, text_chunk, tool_chunk
++from conftest import FakeLLM, api_client, text_chunk, tool_chunk
+ from jarvis.api import create_app
+ 
+ 
+@@ -11,26 +10,26 @@ def parse(body):
+ 
+ 
+ def test_health(cfg):
+-    r = TestClient(create_app(cfg, FakeLLM([]))).get("/health")
++    r = api_client(create_app(cfg, FakeLLM([])), cfg).get("/health")
+     assert r.status_code == 200 and "get_time" in r.json()["tools"]
+ 
+ 
+ def test_chat_streams_events(cfg):
+     llm = FakeLLM([[tool_chunk("get_time", {})], [text_chunk("noon")]])
+-    r = TestClient(create_app(cfg, llm)).post("/chat", json={"message": "time?"})
++    r = api_client(create_app(cfg, llm), cfg).post("/chat", json={"message": "time?"})
+     assert r.headers["content-type"].startswith("text/event-stream")
+     kinds = [e["type"] for e in parse(r.text)]
+     assert kinds == ["tool_call", "tool_result", "token", "done"]
+ 
+ 
+ def test_rejects_empty_message(cfg):
+-    r = TestClient(create_app(cfg, FakeLLM([]))).post("/chat", json={"message": ""})
++    r = api_client(create_app(cfg, FakeLLM([])), cfg).post("/chat", json={"message": ""})
+     assert r.status_code == 422
+ 
+ 
+ def test_sessions_are_separate(cfg):
+     llm = FakeLLM([[text_chunk("a")], [text_chunk("b")]])
+-    c = TestClient(create_app(cfg, llm))
++    c = api_client(create_app(cfg, llm), cfg)
+     c.post("/chat", json={"message": "x", "session_id": "s1"})
+     c.post("/chat", json={"message": "y", "session_id": "s2"})
+     assert [m["content"] for m in llm.calls[1] if m["role"] == "user"] == ["y"]
+diff --git a/tests/test_api_security.py b/tests/test_api_security.py
+new file mode 100644
+index 0000000..b018b4d
+--- /dev/null
++++ b/tests/test_api_security.py
+@@ -0,0 +1,83 @@
++"""Host and Origin checks (DNS rebinding, cross-site POSTs). No auth is tested because there is none."""
++import dataclasses
++import json
++
++import pytest
++
++from conftest import FakeLLM, api_client, text_chunk
++from jarvis.api import create_app
++from jarvis.config import load_config
++from jarvis.memory.remember import MEMORY_FILE
++
++NOOP = {"session_id": "none", "id": "x", "approve": True}
++BODY = {"message": "remember that I like green tea", "session_id": "s"}
++
++
++def make(cfg, **kw):
++    return api_client(create_app(dataclasses.replace(cfg, **kw), FakeLLM([])), cfg)
++
++
++def test_allowed_hosts_pass(cfg):
++    c = make(cfg)
++    for host in ("127.0.0.1", "localhost", "[::1]"):
++        assert c.get("/health", headers={"Host": f"{host}:{cfg.api_port}"}).status_code == 200
++
++
++@pytest.mark.parametrize("host", ["evil.example", "evil.example:8000", "127.0.0.1", "127.0.0.1:9999", "localhost.evil.example:8000"])
++def test_bad_host_is_403_even_for_health(cfg, host):
++    r = make(cfg).get("/health", headers={"Host": host})
++    assert r.status_code == 403 and r.json() == {"error": "host not allowed"}
++
++
++def test_rebinding_style_post_does_not_reach_the_agent(cfg):
++    r = make(cfg).post("/chat", json=BODY, headers={"Host": "evil.example:8000"})
++    assert r.status_code == 403 and not (cfg.notes_dir / MEMORY_FILE).exists()
++
++
++@pytest.mark.parametrize("path,body", [("/chat", BODY), ("/confirm", {"session_id": "s", "id": "x", "approve": True}),
++                                        ("/forget", {"session_id": "s"})])
++def test_bad_origin_post_is_403_and_writes_nothing(cfg, path, body):
++    r = make(cfg).post(path, json=body, headers={"Origin": "https://evil.example"})
++    assert r.status_code == 403 and r.json() == {"error": "origin not allowed"}
++    assert not (cfg.notes_dir / MEMORY_FILE).exists()
++
++
++def test_origin_null_is_refused(cfg):
++    assert make(cfg).post("/chat", json=BODY, headers={"Origin": "null"}).status_code == 403
++
++
++def test_good_and_missing_origin_pass(cfg):
++    c = make(cfg)
++    for origin in (f"http://127.0.0.1:{cfg.api_port}", f"http://localhost:{cfg.api_port}", f"http://[::1]:{cfg.api_port}/", None):
++        headers = {"Origin": origin} if origin else {}
++        assert c.post("/confirm", json=NOOP, headers=headers).status_code == 404  # reaches the app: unknown session
++
++
++def test_get_ignores_origin(cfg):
++    assert make(cfg).get("/health", headers={"Origin": "https://evil.example"}).status_code == 200
++
++
++def test_extra_origin_from_config_and_its_host_pass(cfg):
++    c = make(cfg, api_allowed_origins=("http://127.0.0.1:5173",))
++    r = c.post("/confirm", json=NOOP, headers={"Origin": "http://127.0.0.1:5173", "Host": "127.0.0.1:5173"})
++    assert r.status_code == 404
++
++
++def test_extra_origin_from_env(cfg, monkeypatch):
++    monkeypatch.setenv("JARVIS_ALLOWED_ORIGINS", "http://127.0.0.1:5173, http://localhost:5173")
++    loaded = load_config()
++    assert loaded.api_allowed_origins == ("http://127.0.0.1:5173", "http://localhost:5173")
++    r = make(cfg, api_allowed_origins=loaded.api_allowed_origins).post(
++        "/confirm", json=NOOP, headers={"Origin": "http://localhost:5173"})
++    assert r.status_code == 404
++
++
++def test_text_plain_post_is_rejected_by_the_body_parser(cfg):
++    r = make(cfg).post("/chat", content=json.dumps(BODY), headers={"Content-Type": "text/plain"})
++    assert r.status_code == 422 and not (cfg.notes_dir / MEMORY_FILE).exists()
++
++
++def test_streaming_still_streams(cfg):
++    llm = FakeLLM([[text_chunk("a")]])
++    r = api_client(create_app(cfg, llm), cfg).post("/chat", json={"message": "hi"})
++    assert r.headers["content-type"].startswith("text/event-stream") and '"done"' in r.text
+diff --git a/tests/test_api_static.py b/tests/test_api_static.py
+index cf5937f..b6b2c72 100644
+--- a/tests/test_api_static.py
++++ b/tests/test_api_static.py
+@@ -1,20 +1,19 @@
+-from fastapi.testclient import TestClient
+ 
+ import jarvis.api as api
+-from conftest import FakeLLM
++from conftest import FakeLLM, api_client
+ 
+ 
+ def test_serves_built_page_and_keeps_api(cfg, tmp_path, monkeypatch):
+     (tmp_path / "web" / "dist").mkdir(parents=True)
+     (tmp_path / "web" / "dist" / "index.html").write_text("<h1>Jarvis page</h1>")
+     monkeypatch.setattr(api, "ROOT", tmp_path)
+-    c = TestClient(api.create_app(cfg, FakeLLM([])))
++    c = api_client(api.create_app(cfg, FakeLLM([])), cfg)
+     assert "Jarvis page" in c.get("/").text
+     assert c.get("/health").json()["status"] == "ok"
+ 
+ 
+ def test_no_dist_means_api_only(cfg, tmp_path, monkeypatch):
+     monkeypatch.setattr(api, "ROOT", tmp_path)
+-    c = TestClient(api.create_app(cfg, FakeLLM([])))
++    c = api_client(api.create_app(cfg, FakeLLM([])), cfg)
+     assert c.get("/").status_code == 404
+     assert c.get("/health").status_code == 200
+diff --git a/tests/test_day5_inputs.py b/tests/test_day5_inputs.py
+index c407f8d..b149b58 100644
+--- a/tests/test_day5_inputs.py
++++ b/tests/test_day5_inputs.py
+@@ -2,7 +2,6 @@
+ import time
+ 
+ import pytest
+-from fastapi.testclient import TestClient
+ 
+ from jarvis.api import create_app
+ from jarvis.tools.registry import Registry, Tool, ToolError
+@@ -64,7 +63,7 @@ def test_read_note_empty_and_huge(cfg):
+ 
+ @pytest.mark.parametrize("sid", ["a b", "../x", "x" * 65, ""])
+ def test_bad_session_id_rejected(cfg, sid):
+-    from conftest import FakeLLM
+-    client = TestClient(create_app(cfg, FakeLLM([])))
++    from conftest import FakeLLM, api_client
++    client = api_client(create_app(cfg, FakeLLM([])), cfg)
+     r = client.post("/chat", json={"message": "hi", "session_id": sid})
+     assert r.status_code == 422
+diff --git a/tests/test_recorder.py b/tests/test_recorder.py
+index 7038d01..87e6ca9 100644
+--- a/tests/test_recorder.py
++++ b/tests/test_recorder.py
+@@ -89,3 +89,79 @@ def test_play_without_afplay(monkeypatch, tmp_path):
+ 
+ def test_recording_properties():
+     assert Recording(None, 1, 0).silent and Recording(None, 1, 10).quiet and not Recording(None, 1, 9000).quiet
++
++
++DEVICES = [
++    {"name": "MacBook Pro Speakers", "max_input_channels": 0, "default_samplerate": 48000},
++    {"name": "MacBook Pro Microphone", "max_input_channels": 1, "default_samplerate": 48000},
++    {"name": "Maanav's AirPods Pro", "max_input_channels": 1, "default_samplerate": 24000},
++    {"name": "iPhone Microphone", "max_input_channels": 1, "default_samplerate": 48000},
++]
++
++
++def test_empty_setting_means_system_default():
++    assert recorder.resolve_input_device("", DEVICES) is None
++    assert recorder.resolve_input_device("  ", DEVICES) is None
++
++
++def test_setting_as_index():
++    assert recorder.resolve_input_device("2", DEVICES) == 2
++
++
++def test_setting_as_name_part_ignores_case():
++    assert recorder.resolve_input_device("airpods", DEVICES) == 2
++    assert recorder.resolve_input_device("IPHONE", DEVICES) == 3
++
++
++def test_name_match_takes_the_first_input_device():
++    assert recorder.resolve_input_device("microphone", DEVICES) == 1
++
++
++def test_device_without_input_channels_is_ignored():
++    with pytest.raises(RecorderError):
++        recorder.resolve_input_device("speakers", DEVICES)  # exists, but output only
++    with pytest.raises(RecorderError):
++        recorder.resolve_input_device("0", DEVICES)
++
++
++def test_no_match_lists_the_available_input_devices():
++    with pytest.raises(RecorderError) as e:
++        recorder.resolve_input_device("yeti", DEVICES)
++    msg = str(e.value)
++    assert 'input device "yeti" not found' in msg
++    assert "1: MacBook Pro Microphone" in msg and "2: Maanav's AirPods Pro" in msg and "Speakers" not in msg
++
++
++def test_out_of_range_index_is_an_error():
++    with pytest.raises(RecorderError):
++        recorder.resolve_input_device("9", DEVICES)
++
++
++def test_devices_listing_marks_default_and_selected():
++    lines = recorder.format_input_devices(DEVICES, default=1, selected=2)
++    assert len(lines) == 3 and "Speakers" not in "".join(lines)
++    assert "[system default]" in lines[0] and "[selected]" not in lines[0]
++    assert "[selected]" in lines[1] and "AirPods" in lines[1]
++
++
++def test_config_reads_input_device_from_env(monkeypatch):
++    from jarvis.config import load_config
++    assert load_config().input_device == ""
++    monkeypatch.setenv("JARVIS_INPUT_DEVICE", "MacBook")
++    assert load_config().input_device == "MacBook"
++
++
++def test_open_microphone_passes_the_chosen_device(monkeypatch):
++    import sys
++    import types
++
++    seen = {}
++    fake = types.SimpleNamespace(
++        query_devices=lambda: DEVICES, PortAudioError=OSError,
++        InputStream=lambda **kw: seen.update(kw) or "stream")
++    monkeypatch.setitem(sys.modules, "sounddevice", fake)
++    monkeypatch.setenv("JARVIS_INPUT_DEVICE", "airpods")
++    assert recorder.open_microphone(lambda x: None) == "stream" and seen["device"] == 2
++    monkeypatch.setenv("JARVIS_INPUT_DEVICE", "nothing like this")
++    with pytest.raises(RecorderError, match="Available input devices"):
++        recorder.open_microphone(lambda x: None)
+diff --git a/tests/test_remember.py b/tests/test_remember.py
+index 3107eee..2ed3358 100644
+--- a/tests/test_remember.py
++++ b/tests/test_remember.py
+@@ -1,9 +1,8 @@
+ import dataclasses
+ 
+ import pytest
+-from fastapi.testclient import TestClient
+ 
+-from conftest import FakeLLM, text_chunk, tool_chunk
++from conftest import FakeLLM, api_client, text_chunk, tool_chunk
+ from jarvis.agent import Agent
+ from jarvis.api import create_app
+ from jarvis.llm import LLMError
+@@ -127,7 +126,7 @@ def test_agent_emits_confirm_event(c):
+ 
+ def test_api_confirm_flow(c):
+     llm = FakeLLM([[tool_chunk("remember", {"fact": "I play pickleball"})], [text_chunk("asked")]])
+-    client = TestClient(create_app(c, llm))
++    client = api_client(create_app(c, llm), c)
+     body = client.post("/chat", json={"message": "note that I play pickleball", "session_id": "s1"}).text  # model path
+     assert '"type": "confirm"' in body
+     pid = body.split('"id": "')[1].split('"')[0]
+@@ -158,7 +157,129 @@ def test_explicit_remember_is_saved_without_asking(cfg):
+     llm = FakeLLM([])  # the model must not be called at all
+     agent = Agent(llm, build_registry(cfg, None, props), "sys", 4, 40, proposals=props)
+     events = list(agent.chat("Remember that I like green tea."))
+-    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "done"]  # no confirm event
++    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "saved", "done"]  # no confirm event
+     assert llm.calls == [] and props.pending() == []
+     assert "You like green tea" in (cfg.notes_dir / "memory.md").read_text()
+     assert events[2]["text"].startswith("Saved to memory.md")
++
++
++# ---- undo ("forget that") ----
++
++def saved(props, fact):
++    return props.approve(props.add(fact).id)
++
++
++def test_undo_removes_exactly_the_saved_line(c):
++    props = Proposals(c, fake_embed)
++    path = c.notes_dir / MEMORY_FILE
++    saved(props, "I like aaa")
++    saved(props, "I like bbb")
++    before = path.read_text()
++    assert props.forget_last() == "Removed: I like bbb"
++    after = path.read_text()
++    assert after == before.replace(before.splitlines(keepends=True)[-1], "")
++    assert "I like aaa" in after and "I like bbb" not in after
++    assert not path.with_name(MEMORY_FILE + ".tmp").exists()
++
++
++def test_second_undo_goes_back_one_then_says_nothing(c):
++    props = Proposals(c, fake_embed)
++    saved(props, "I like aaa")
++    assert props.forget_last() == "Removed: I like aaa"
++    assert props.forget_last() == "Nothing to undo."
++
++
++def test_undo_with_nothing_saved(c):
++    assert Proposals(c, fake_embed).forget_last() == "Nothing to undo."
++
++
++def test_undo_never_touches_lines_this_session_did_not_write(c):
++    path = c.notes_dir / MEMORY_FILE
++    older = Proposals(c, fake_embed)
++    saved(older, "I like ccc")                       # another session
++    path.write_text(path.read_text() + "- 2020-01-01: hand written line\n")
++    mine = Proposals(c, fake_embed)
++    assert mine.forget_last() == "Nothing to undo."  # saved nothing itself
++    assert saved(mine, "I like ddd").startswith("Saved")
++    assert mine.forget_last() == "Removed: I like ddd"
++    assert mine.forget_last() == "Nothing to undo."
++    text = path.read_text()
++    assert "I like ccc" in text and "hand written line" in text and "I like ddd" not in text
++
++
++def test_already_remembered_is_not_undoable(c):
++    saved(Proposals(c, fake_embed), "I like aaa")
++    mine = Proposals(c, fake_embed)
++    assert saved(mine, "I like aaa") == "Already remembered."
++    assert mine.forget_last() == "Nothing to undo."
++    assert "I like aaa" in (c.notes_dir / MEMORY_FILE).read_text()
++
++
++def test_undo_when_the_line_was_edited_away(c):
++    props = Proposals(c, fake_embed)
++    saved(props, "I like aaa")
++    path = c.notes_dir / MEMORY_FILE
++    path.write_text("# Memory\n\n- hand edit\n")
++    assert "no longer in" in props.forget_last()
++    assert path.read_text() == "# Memory\n\n- hand edit\n"
++
++
++def test_undo_updates_the_search_index(c):
++    props = Proposals(c, fake_embed)
++    saved(props, "My favourite letter is aaa")
++    assert any("favourite letter" in h.text for h in search_notes(c, fake_embed, "aaa", k=5))
++    props.forget_last()
++    assert not any("favourite letter" in h.text for h in search_notes(c, fake_embed, "aaa", k=5))
++
++
++def test_undo_without_embedder_says_to_reingest(c):
++    props = Proposals(c, None)
++    saved(props, "I like aaa")
++    out = props.forget_last()
++    assert out == "Removed: I like aaa. Run scripts/ingest.sh so search stops returning it."
++
++
++@pytest.mark.parametrize("text", ["forget that", "Forget it", "undo that", "undo", "never mind that", "nevermind that",
++                                  "please undo", "Hey, forget that!", "ok forget it.", "okay, undo that?"])
++def test_undo_phrases_match(text):
++    from jarvis.memory.remember import undo_request
++    assert undo_request(text)
++
++
++@pytest.mark.parametrize("text", ["forget that I like tea", "undo the last commit", "can you undo that for me", "remember that undo",
++                                  "forget", "never mind", "", "what is undo"])
++def test_other_sentences_do_not_match(text):
++    from jarvis.memory.remember import undo_request
++    assert not undo_request(text)
++
++
++def test_agent_undo_never_reaches_the_model(c):
++    llm = FakeLLM([])  # any model call would raise IndexError
++    props = Proposals(c, fake_embed)
++    agent = Agent(llm, build_registry(c, fake_embed, props), "sys", 4, 40, None, props)
++    events = list(agent.chat("remember that I like aaa"))
++    assert [e["type"] for e in events] == ["tool_call", "tool_result", "token", "saved", "done"]
++    assert events[3]["fact"] == "You like aaa"
++    undo = list(agent.chat("undo that"))
++    assert [e["type"] for e in undo] == ["token", "done"] and undo[0]["text"] == "Removed: You like aaa"
++    assert llm.calls == []
++    assert list(agent.chat("forget it"))[0]["text"] == "Nothing to undo."
++
++
++def test_no_saved_event_when_nothing_was_written(c):
++    props = Proposals(c, fake_embed)
++    agent = Agent(FakeLLM([]), build_registry(c, fake_embed, props), "sys", 4, 40, None, props)
++    list(agent.chat("remember that I like aaa"))
++    again = list(agent.chat("remember that I like aaa"))
++    assert "saved" not in [e["type"] for e in again]
++
++
++def test_api_forget_route(c):
++    llm = FakeLLM([])
++    client = api_client(create_app(c, llm), c)
++    assert client.post("/forget", json={"session_id": "nobody"}).status_code == 404
++    client.post("/chat", json={"message": "remember that I like aaa", "session_id": "s1"})
++    assert client.post("/forget", json={"session_id": "s2"}).status_code == 404            # other session
++    assert client.post("/forget", json={"session_id": "s1"}).json()["message"].startswith("Removed: You like aaa")
++    assert client.post("/forget", json={"session_id": "s1"}).json() == {"message": "Nothing to undo."}
++    assert client.post("/forget", json={"session_id": "../x"}).status_code == 422
+diff --git a/web/src/App.test.tsx b/web/src/App.test.tsx
+index 6dd4466..fa3ad4f 100644
+--- a/web/src/App.test.tsx
++++ b/web/src/App.test.tsx
+@@ -38,6 +38,51 @@ async function ask() {
+   await screen.findByText("Save to memory?");
+ }
+ 
++describe("Undo after a direct save", () => {
++  const SAVED = [
++    { type: "token", text: "Saved to memory.md." },
++    { type: "saved", fact: "You like tea" },
++    { type: "done" },
++  ];
++  beforeEach(() => {
++    vi.stubGlobal(
++      "fetch",
++      vi.fn(async (url: string) => {
++        calls.push(url);
++        if (url === "/health") return Response.json({ status: "ok", ollama: true, model: "m1", tools: [] });
++        if (url === "/forget") return Response.json({ message: "Removed: You like tea" });
++        return new Response(SAVED.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(""), { headers: { "content-type": "text/event-stream" } });
++      }),
++    );
++  });
++  const say = (text: string) => {
++    fireEvent.change(screen.getByLabelText("Message to Jarvis"), { target: { value: text } });
++    fireEvent.click(screen.getByRole("button", { name: "Send" }));
++  };
++
++  it("shows a real Undo button, calls /forget only on click, then shows the answer instead", async () => {
++    render(<App />);
++    say("remember that I like tea");
++    const btn = await screen.findByRole("button", { name: "Undo" });
++    await new Promise((r) => setTimeout(r, 50));
++    expect(calls).not.toContain("/forget"); // never clicked by itself
++    fireEvent.click(btn);
++    await screen.findByText("Removed: You like tea");
++    expect(calls.filter((c) => c === "/forget")).toHaveLength(1);
++    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
++  });
++  it("removes the Undo button when the next message is sent", async () => {
++    render(<App />);
++    say("remember that I like tea");
++    await screen.findByRole("button", { name: "Undo" });
++    say("what time is it");
++    await waitFor(() => expect(calls.filter((c) => c === "/chat")).toHaveLength(2));
++    await new Promise((r) => setTimeout(r, 50)); // second reply finished streaming
++    expect(screen.getAllByRole("button", { name: "Undo" })).toHaveLength(1); // only the new reply has one: the old one is gone
++    expect(calls.filter((c) => c === "/forget")).toHaveLength(0);
++  });
++});
++
+ describe("App with a scripted stream", () => {
+   it("shows reply as plain text, tool card, sources and the confirm card", async () => {
+     await ask();
+diff --git a/web/src/App.tsx b/web/src/App.tsx
+index ad479e6..a102924 100644
+--- a/web/src/App.tsx
++++ b/web/src/App.tsx
+@@ -1,5 +1,5 @@
+ import { useEffect, useReducer, useRef, useState } from "react";
+-import { chat, confirm, health as getHealth, type Health } from "./api";
++import { chat, confirm, forget, health as getHealth, type Health } from "./api";
+ import { Composer } from "./components/Composer";
+ import { ErrorBanner } from "./components/ErrorBanner";
+ import { Header } from "./components/Header";
+@@ -58,6 +58,17 @@ export function App() {
+     }
+   }
+ 
++  async function undo(id: number) {
++    dispatch({ type: "undo", id, undo: { status: "working" } });
++    try {
++      const message = await forget(session.current);
++      dispatch({ type: "undo", id, undo: { status: "done", message } });
++    } catch (e) {
++      dispatch({ type: "undo", id, undo: { status: "ready" } });
++      dispatch({ type: "failed", message: e instanceof Error ? e.message : "Network error." });
++    }
++  }
++
+   function newChat() {
+     abort.current?.abort();
+     session.current = saveSessionId(newSessionId());
+@@ -68,7 +79,7 @@ export function App() {
+   return (
+     <div className="app">
+       <Header health={health} online={online} onNewChat={newChat} />
+-      <MessageList messages={state.messages} streaming={state.streaming} onPick={setDraft} onDecide={decide} />
++      <MessageList messages={state.messages} streaming={state.streaming} onPick={setDraft} onDecide={decide} onUndo={undo} />
+       <div className="column banners">
+         {!online && <ErrorBanner message={OFFLINE} />}
+         {state.error && <ErrorBanner message={state.error} onDismiss={() => dispatch({ type: "dismiss_error" })} />}
+diff --git a/web/src/api.ts b/web/src/api.ts
+index d5c0fe0..418ff19 100644
+--- a/web/src/api.ts
++++ b/web/src/api.ts
+@@ -19,6 +19,16 @@ export async function* chat(message: string, sessionId: string, signal: AbortSig
+   yield* parseSSE(r.body);
+ }
+ 
++export async function forget(sessionId: string): Promise<string> {
++  const r = await fetch("/forget", {
++    method: "POST",
++    headers: { "Content-Type": "application/json" },
++    body: JSON.stringify({ session_id: sessionId }),
++  });
++  if (!r.ok) throw new Error(`The server answered ${r.status}.`);
++  return (await r.json()).message;
++}
++
+ export async function confirm(sessionId: string, id: string, approve: boolean): Promise<string> {
+   const r = await fetch("/confirm", {
+     method: "POST",
+diff --git a/web/src/components/Message.tsx b/web/src/components/Message.tsx
+index 273acb8..50bd1a7 100644
+--- a/web/src/components/Message.tsx
++++ b/web/src/components/Message.tsx
+@@ -3,9 +3,14 @@ import { ConfirmCard } from "./ConfirmCard";
+ import { SourceChips } from "./SourceChips";
+ import { ToolCard } from "./ToolCard";
+ 
+-type Props = { msg: Msg; live: boolean; onDecide: (p: Proposal, approve: boolean) => void };
++type Props = {
++  msg: Msg;
++  live: boolean;
++  onDecide: (p: Proposal, approve: boolean) => void;
++  onUndo: (id: number) => void;
++};
+ 
+-export function Message({ msg, live, onDecide }: Props) {
++export function Message({ msg, live, onDecide, onUndo }: Props) {
+   if (msg.role === "user") {
+     return (
+       <div className="msg user">
+@@ -35,6 +40,15 @@ export function Message({ msg, live, onDecide }: Props) {
+         )}
+         {msg.stopped && <p className="muted">(stopped)</p>}
+       </div>
++      {msg.undo?.status === "done" ? (
++        <p className="muted" role="status">{msg.undo.message}</p>
++      ) : (
++        msg.undo && !live && (
++          <button type="button" className="undo" disabled={msg.undo.status === "working"} onClick={() => onUndo(msg.id)}>
++            Undo
++          </button>
++        )
++      )}
+       <SourceChips files={msg.sources} />
+       {msg.proposals.map((p) => (
+         <ConfirmCard key={p.id} proposal={p} onDecide={(a) => onDecide(p, a)} />
+diff --git a/web/src/components/MessageList.tsx b/web/src/components/MessageList.tsx
+index 3b92026..8a07c68 100644
+--- a/web/src/components/MessageList.tsx
++++ b/web/src/components/MessageList.tsx
+@@ -9,9 +9,10 @@ type Props = {
+   streaming: boolean;
+   onPick: (text: string) => void;
+   onDecide: (p: Proposal, approve: boolean) => void;
++  onUndo: (id: number) => void;
+ };
+ 
+-export function MessageList({ messages, streaming, onPick, onDecide }: Props) {
++export function MessageList({ messages, streaming, onPick, onDecide, onUndo }: Props) {
+   const box = useRef<HTMLDivElement>(null);
+   const stick = useRef(true);
+   const [away, setAway] = useState(false);
+@@ -40,7 +41,7 @@ export function MessageList({ messages, streaming, onPick, onDecide }: Props) {
+             <EmptyState onPick={onPick} />
+           ) : (
+             messages.map((m, i) => (
+-              <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} />
++              <Message key={m.id} msg={m} live={streaming && i === messages.length - 1} onDecide={onDecide} onUndo={onUndo} />
+             ))
+           )}
+         </div>
+diff --git a/web/src/sse.ts b/web/src/sse.ts
+index 21ef03c..f506f61 100644
+--- a/web/src/sse.ts
++++ b/web/src/sse.ts
+@@ -4,10 +4,11 @@ export type ChatEvent =
+   | { type: "tool_result"; name: string; result: string }
+   | { type: "sources"; files: string[] }
+   | { type: "confirm"; id: string; fact: string; from_context: boolean }
++  | { type: "saved"; fact: string }
+   | { type: "error"; message: string }
+   | { type: "done" };
+ 
+-const KINDS = new Set(["token", "tool_call", "tool_result", "sources", "confirm", "error", "done"]);
++const KINDS = new Set(["token", "tool_call", "tool_result", "sources", "confirm", "saved", "error", "done"]);
+ 
+ function parseLine(line: string): ChatEvent | null {
+   if (!line.startsWith("data:")) return null;
+diff --git a/web/src/state.test.ts b/web/src/state.test.ts
+index 9533b0e..b56a568 100644
+--- a/web/src/state.test.ts
++++ b/web/src/state.test.ts
+@@ -47,3 +47,23 @@ describe("reducer", () => {
+     expect(run(send(), { type: "reset" }).messages).toEqual([]);
+   });
+ });
++
++describe("undo", () => {
++  const saved = (): Action => ev({ type: "saved", fact: "You like tea" });
++  it("a saved event makes an Undo button available on that reply", () => {
++    expect(reply(run(send(), saved())).undo).toEqual({ status: "ready" });
++  });
++  it("a reply without a saved event has no Undo", () => {
++    expect(reply(run(send(), ev({ type: "token", text: "hi" }), ev({ type: "done" }))).undo).toBeUndefined();
++  });
++  it("sending the next message removes a ready Undo", () => {
++    const s = run(send(), saved(), ev({ type: "done" }), send());
++    expect(s.messages.filter((m) => m.role === "assistant" && m.undo)).toEqual([]);
++  });
++  it("using Undo moves working -> done and keeps the note after the next message", () => {
++    const id = reply(run(send(), saved())).id;
++    const s = run(send(), saved(), { type: "undo", id, undo: { status: "working" } }, { type: "undo", id, undo: { status: "done", message: "Removed: You like tea" } }, send());
++    const first = s.messages[1] as Extract<Msg, { role: "assistant" }>;
++    expect(first.undo).toEqual({ status: "done", message: "Removed: You like tea" });
++  });
++});
+diff --git a/web/src/state.ts b/web/src/state.ts
+index f67483c..01ce1c0 100644
+--- a/web/src/state.ts
++++ b/web/src/state.ts
+@@ -12,9 +12,11 @@ export type Proposal = {
+   message?: string;
+ };
+ 
++export type Undo = { status: "ready" | "working" | "done"; message?: string };
++
+ export type Msg =
+   | { id: number; role: "user"; text: string }
+-  | { id: number; role: "assistant"; parts: Part[]; sources: string[]; proposals: Proposal[]; stopped: boolean };
++  | { id: number; role: "assistant"; parts: Part[]; sources: string[]; proposals: Proposal[]; stopped: boolean; undo?: Undo };
+ 
+ export type State = { messages: Msg[]; streaming: boolean; error: string | null; nextId: number };
+ 
+@@ -25,6 +27,7 @@ export type Action =
+   | { type: "failed"; message: string }
+   | { type: "dismiss_error" }
+   | { type: "proposal"; id: string; patch: Partial<Proposal> }
++  | { type: "undo"; id: number; undo: Undo }
+   | { type: "reset" };
+ 
+ export const initial: State = { messages: [], streaming: false, error: null, nextId: 1 };
+@@ -63,6 +66,8 @@ function applyEvent(s: State, ev: ChatEvent): State {
+         ...m,
+         proposals: [...m.proposals, { id: ev.id, fact: ev.fact, fromContext: ev.from_context, status: "pending" }],
+       }));
++    case "saved": // the reply that says "Saved to memory.md." gets an Undo button
++      return lastAssistant(s, (m) => ({ ...m, undo: { status: "ready" } }));
+     case "error":
+       return { ...s, error: ev.message };
+     case "done":
+@@ -79,7 +84,8 @@ export function reducer(s: State, a: Action): State {
+         error: null,
+         nextId: s.nextId + 2,
+         messages: [
+-          ...s.messages,
++          // sending the next message removes any Undo button still on screen (a finished one keeps its note)
++          ...s.messages.map((m) => (m.role === "assistant" && m.undo && m.undo.status !== "done" ? { ...m, undo: undefined } : m)),
+           { id: s.nextId, role: "user", text: a.text },
+           { id: s.nextId + 1, role: "assistant", parts: [], sources: [], proposals: [], stopped: false },
+         ],
+@@ -102,6 +108,8 @@ export function reducer(s: State, a: Action): State {
+             : m,
+         ),
+       };
++    case "undo":
++      return { ...s, messages: s.messages.map((m) => (m.id === a.id && m.role === "assistant" ? { ...m, undo: a.undo } : m)) };
+     case "reset":
+       return { ...initial, nextId: s.nextId };
+   }
+diff --git a/web/src/styles.css b/web/src/styles.css
+index f07fbef..9fd1db4 100644
+--- a/web/src/styles.css
++++ b/web/src/styles.css
+@@ -87,6 +87,7 @@ button.primary { background: var(--accent); color: var(--on-accent); border-colo
+ button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+ button.ghost { background: transparent; }
+ button.icon-btn { padding: 0; width: 44px; }
++button.undo { min-height: 36px; margin-top: var(--s2); padding: 0 var(--s3); }
+ button.link { border: 0; background: none; padding: var(--s1) 0; min-height: 0; color: var(--accent); text-decoration: underline; }
+ 
+ /* message list */
