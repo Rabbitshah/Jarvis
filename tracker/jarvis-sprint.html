@@ -763,6 +763,13 @@ const LOG = [
     "did": "Hardening pushed (249 Python + 23 Vitest pass on the Mac). Claude Code found that `jarvis --record` and `--transcribe` crashed with NameError: record_cmd and transcribe_cmd were deleted from cli.py in commit 277ecce (Day 25, my edit replaced a block of the file and removed code after it); nothing noticed because no test called them. Restored both from git history (old code unchanged) and added tests/test_cli_commands.py, which fails if main() calls a command function that does not exist. 250 tests pass here",
     "broke": "The restored functions were not run on the Mac with a real microphone after the restore. The Day 24 and 25 'verified' statements were true when made and became false one commit later. Linux CI has not run yet",
     "next": "Push, check the Actions tab, run bash scripts/record.sh --devices and bash scripts/record.sh"
+  },
+  {
+    "date": "2026-11-16",
+    "hours": "0",
+    "did": "Checked on the Mac and pushed: restored record/transcribe commands work (peak 21393, transcript 'Hey Jarvis, watch the time.'), web page and voice mode tested by you. Peak 1947 on the earlier try gave a garbled 'Hey Jarvis', so input volume matters. Sprint scope is complete",
+    "broke": "CI result on GitHub was not reported to me; v0.1 tag and GitHub description/topics status unknown; Whisper still mishears 'what's' as 'watch'",
+    "next": "Optional only: README GIF, run log, Windows test"
   }
 ];
 // ---- END DATA ----
